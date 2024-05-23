@@ -1,3 +1,4 @@
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/petrobras/BibMon/HEAD)
 [![Apache 2.0][apache-shield]][apache] 
 [![CC BY 4.0][cc-by-shield]][cc-by]
 
