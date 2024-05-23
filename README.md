@@ -13,9 +13,9 @@
 Installation
 ----------------------
 
-`BibMon` can be installed locally using `pip`. In the root directory of the package, which contains the `setup.py` file, type the following command:
+`BibMon` can be installed using `pip`:
 
-    pip install -e .
+    pip install bibmon
 
 Available Models
 ----------------------

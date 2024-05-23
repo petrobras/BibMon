@@ -26,6 +26,7 @@ setuptools.setup(
     license='Apache 2.0',
     version='1.0.0',
     long_description=README,
+    long_description_content_type='text/markdown',
     url='https://github.com/petrobras/bibmon',
     packages=setuptools.find_packages(include=['bibmon','bibmon.*']),
     python_requires=">=3.9",
