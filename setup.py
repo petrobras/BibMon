@@ -1,0 +1,33 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Aug  4 20:03:43 2020
+
+@author: afranio
+"""
+
+import setuptools
+import os
+
+with open('README.md') as f:
+    README = f.read()
+    
+requirements = os.path.dirname(os.path.realpath(__file__))+'/requirements.txt'
+
+if os.path.isfile(requirements):
+    with open(requirements) as f:
+        install_requires = f.read().splitlines()
+
+setuptools.setup(
+    author="BibMon developers",
+    author_email="cc-bibmon@petrobras.com.br",
+    name='bibmon',
+    description='Library with routines for data-driven process monitoring.',
+    license='Apache 2.0',
+    version='1.0.0',
+    long_description=README,
+    url='https://github.com/petrobras/bibmon',
+    packages=setuptools.find_packages(include=['bibmon','bibmon.*']),
+    python_requires=">=3.9",
+    install_requires=install_requires
+)
