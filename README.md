@@ -24,6 +24,7 @@ Available Models
 * PCA (Principal Component Analysis);
 * ESN (Echo State Network);
 * SBM (Similarity-Based Method);
+* Autoencoders;
 * any regressor that uses the `scikit-learn` interface.
 
 Usage
