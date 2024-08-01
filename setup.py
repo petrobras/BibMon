@@ -11,7 +11,7 @@ import os
 
 with open('README.md') as f:
     README = f.read()
-    
+
 requirements = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     'requirements.txt'
@@ -20,6 +20,8 @@ requirements = os.path.join(
 if os.path.isfile(requirements):
     with open(requirements) as f:
         install_requires = f.read().splitlines()
+else:
+    install_requires = []
 
 setuptools.setup(
     author="BibMon developers",
