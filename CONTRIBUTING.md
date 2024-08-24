@@ -3,23 +3,21 @@
 [apache]: https://opensource.org/licenses/Apache-2.0
 [apache-shield]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
 
-# Welcome to the BibMon contributing guide
-
 Thank you for your interest in contributing to the BibMon project!
 
-We expect to receive various types of contributions from individuals, research institutions, startups, companies and oil operators partners.
+We expect to receive various types of contributions from individuals, research institutions, startups and companies.
 
 In this guide we present how the expected contributions might be proposed.
 
-# Getting started
+## Getting started
 
 The recommended first step is to read the project's [README](README.md) for an overview of what this repository contains.
 
-# Asking questions
+## Asking questions
 
 Please do not open issues to ask questions. Please use the Discussions section accessed through the link that appears in the top menu.
 
-# Before contributing
+## Before contributing
 
 Before you can contribute to this project, we require you read and agree to the following documents:
 
@@ -29,7 +27,7 @@ Before you can contribute to this project, we require you read and agree to the 
 
 It is also very important to know, participate and follow the discussions. Click on the Discussions link that appears in the top menu.
 
-# BibMon architecture
+## BibMon architecture
 
 `BibMon` was designed with easy extensibility and maintenance in mind, even for users with little experience in software development. This was achieved through the use of the object-oriented paradigm, which allows for the pre-implementation of generic functionalities and enables new features to be quickly programmed by leveraging the original structure.
 
@@ -51,14 +49,14 @@ The following bulletpoints describe the library's architecture and provide instr
 * Additional Features
    * Additional features such as generating comparative tables, correlation analysis, etc., are programmed in the `_bibmon_tools.py` file.
 
-# Implementing New Functionalities
+## Implementing New Functionalities
 
 When implementing new functionalities, don't forget to:
 
 * Add the classes and functions to the library's namespace (in the `__init__.py` file).
 * Document the classes and functions using docstrings in the [NumPy format](https://numpydoc.readthedocs.io/en/latest/format.html).
 
-## Models
+### Models
 
 To implement a new model, create a .py file with the following import statement:
 
@@ -81,7 +79,7 @@ The functionality implemented in `train_core` is specific to the considered mode
 
 Optionally, implement an `__init__()` constructor or any other necessary methods.
 
-## Preprocessing Techniques
+### Preprocessing Techniques
 
 Preprocessing techniques should be implemented as methods of the `PreProcess` class following the pattern:
 
@@ -99,16 +97,16 @@ Use the `self.is_Y` and `train_or_test` flags to cover the possibilities regardi
 
 Even if not used, the `train_or_test` flag should be present in the input parameters.
 
-## Data
+### Data
 
 Add the new dataset to a specific subdirectory in the `bibmon` directory. Program the data loading function in the `_load_data.py` file.
 
-## Alarms
+### Alarms
 
 To program a new alarm logic, define a function in the `_alarms.py` file.
 
 To apply the new logic in the library, it will be necessary to implement the use of the functionality in the methods of the `GenericModel` class by creating a new key in the `self.alarms` dictionary. If necessary, window sizes and other parameters should be programmed in the method entries.
 
-## Additional Features
+### Additional Features
 
 Preferably, use the `_bibmon_tools.py` file to implement additional features.
