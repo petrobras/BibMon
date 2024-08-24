@@ -11,7 +11,7 @@
 
 `BibMon` (from the Portuguese ***Bib**lioteca de **Mon**itoramento de Processos*, or Process Monitoring Library) is a Python package that provides deviation-based predictive models for fault detection, soft sensing, and process condition monitoring.
 
-For further information, please refer to the preprint of the scientific publication detailing `BibMon` at [this link](https://drive.google.com/file/d/10DoNNA8gVeu2qtfjPuAbeFnwDWy_Xkzn/view?usp=sharing).
+For further information, please refer to the [documentation](https://bibmon.readthedocs.io/) or to the [preprint of the scientific publication](https://drive.google.com/file/d/10DoNNA8gVeu2qtfjPuAbeFnwDWy_Xkzn/view?usp=sharing) detailing `BibMon`.
 
 Installation
 ----------------------
