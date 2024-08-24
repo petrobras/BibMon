@@ -3,3 +3,4 @@ sphinx-rtd-theme
 sphinx-autodocgen
 sphinxcontrib-napoleon
 myst-nb
+bibmon
