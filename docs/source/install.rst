@@ -8,13 +8,12 @@ Installing from PyPI
 
 To install Requests, you can use pip::
 
-    $ pip install bimon
+    $ pip install bibmon
 
 Get the Source Code
 -------------------
 
-BibMon is developed on GitHub, where the code is
-`available at <https://github.com/petrobras/bibmon>`_.
+BibMon is developed on GitHub, where the code is available `here <https://github.com/petrobras/bibmon>`_.
 
 You can either clone the public repository::
 
