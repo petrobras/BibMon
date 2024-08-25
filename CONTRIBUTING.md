@@ -11,7 +11,7 @@ In this guide we present how the expected contributions might be proposed.
 
 ## Getting started
 
-The recommended first step is to read the project's [README](README.md) for an overview of what this repository contains.
+The recommended first step is to read the project's [README](https://github.com/petrobras/BibMon/blob/main/README.md) for an overview of what this repository contains.
 
 ## Asking questions
 
@@ -21,8 +21,8 @@ Please do not open issues to ask questions. Please use the Discussions section a
 
 Before you can contribute to this project, we require you read and agree to the following documents:
 
-* [CODE OF CONDUCT](CODE_OF_CONDUCT.md);
-* [CONTRIBUTOR LICENSE AGREEMENT](CONTRIBUTOR_LICENSE_AGREEMENT.md);
+* [CODE OF CONDUCT](https://github.com/petrobras/BibMon/blob/main/CODE_OF_CONDUCT.md);
+* [CONTRIBUTOR LICENSE AGREEMENT](https://github.com/petrobras/BibMon/blob/main/CONTRIBUTOR_LICENSE_AGREEMENT.md);
 * This contributing guide.
 
 It is also very important to know, participate and follow the discussions. Click on the Discussions link that appears in the top menu.
