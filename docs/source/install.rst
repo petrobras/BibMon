@@ -6,9 +6,16 @@ This section covers the installation of BibMon.
 Installing from PyPI
 --------------------------------
 
-To install Requests, you can use pip::
+To install BibMon, you can use pip::
 
     $ pip install bibmon
+
+Installing from conda-forge
+--------------------------------
+
+Alternatively, you can use conda::
+
+    $ conda install conda-forge::bibmon
 
 Get the Source Code
 -------------------

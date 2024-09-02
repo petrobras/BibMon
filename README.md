@@ -16,9 +16,13 @@ For further information, please refer to the [documentation](https://bibmon.read
 Installation
 ----------------------
 
-`BibMon` can be installed using `pip`:
+`BibMon` can be installed using [pip](https://pypi.org/project/bibmon/):
 
     pip install bibmon
+
+Or [conda](https://anaconda.org/conda-forge/bibmon):
+
+    conda install conda-forge::bibmon
 
 Available Models
 ----------------------
