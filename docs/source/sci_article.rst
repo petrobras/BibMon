@@ -1,4 +1,4 @@
 Scientific article
 -----------------------------
 
-A scientific article detailing the package structure, design philosophy and main features can be accessed in `this link <https://drive.google.com/file/d/10DoNNA8gVeu2qtfjPuAbeFnwDWy_Xkzn/view?usp=sharing>`_.
+A scientific article detailing the package structure, design philosophy and main features can be accessed in `this link <https://www.sciencedirect.com/science/article/pii/S2772508124000449>`_.
