@@ -43,7 +43,8 @@ Essentially, the library is used in two steps:
 
 Specifically, the implemented control charts are based on squared prediction error (SPE).
 
-The examples in the `notebooks/` directory demonstrate the main functionalities of `BibMon`. The API reference can be generated using the Sphynx package from the files in the `docs/` directory.
+For more details, please refer to the [tutorials](https://bibmon.readthedocs.io/en/latest/tutorials.html) available in the documentation to learn about the main functionalities of `BibMon`. You can find the corresponding Jupyter Notebooks for these tutorials in the `docs/source/` directory.
+
 
 Features
 ----------------------
