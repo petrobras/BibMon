@@ -29,7 +29,7 @@ setuptools.setup(
     name='bibmon',
     description='Library with routines for data-driven process monitoring.',
     license='Apache 2.0',
-    version='1.1.4',
+    version='1.1.5',
     long_description=README,
     long_description_content_type='text/markdown',
     url='https://github.com/petrobras/bibmon',
