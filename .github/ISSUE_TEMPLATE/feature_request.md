@@ -7,14 +7,11 @@ assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## How we are today
+Provide a brief description of how BibMon currently addresses the topic related to this issue. Highlight any limitations, challenges, or areas that need improvement.
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+## Proposed New Feature
+Explain the proposed new feature. Include its objectives, expected benefits, and any relevant background information. Reference relevant literature or examples where applicable to support your proposal.
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
-
-**Additional context**
-Add any other context or screenshots about the feature request here.
+## Implementation
+Describe how the the new feature will integrate with the existing structure of the package or specify any modifications that will be needed. Include any potential challenges and how they might be addressed.
