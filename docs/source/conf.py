@@ -32,6 +32,8 @@ author = 'BibMon devs'
 # ones.
 extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon','myst_nb']
 
+myst_enable_extensions = ["dollarmath", "amsmath"]
+
 # Add any paths that contain templates here, relative to this directory.
 #templates_path = ['_templates']
 
