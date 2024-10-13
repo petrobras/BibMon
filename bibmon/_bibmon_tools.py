@@ -319,7 +319,7 @@ def complete_analysis (model, X_train, X_validation, X_test,
     model.predict(X_test, Y_test, 
                   count_window_size = count_window_size, 
                   count_limit = count_limit,
-                  redefine_limit = True, algorithm=algorithm)
+                  redefine_limit = False, algorithm=algorithm)
 
     # PLOTTING SPE
 
@@ -553,7 +553,7 @@ def comparative_table (models, X_train, X_validation, X_test,
         model.predict(X_test, Y_test, 
                       count_window_size = count_window_size, 
                       count_limit = count_limit,
-                      redefine_limit = True)
+                      redefine_limit = False)
 
         # TERMS FOR PREDICTION TABLE
         
