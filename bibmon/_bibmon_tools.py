@@ -207,7 +207,8 @@ def complete_analysis (model, X_train, X_validation, X_test,
                        count_limit = 1,
                        count_window_size = 0,
                        fault_start = None,
-                       fault_end = None):
+                       fault_end = None,
+                       algorithm = 'Default'):
     """
     Performs a complete monitoring analysis, with train, validation, and test.
 
@@ -262,6 +263,11 @@ def complete_analysis (model, X_train, X_validation, X_test,
         Start timestamp of the fault.
     fault_end: string, optional
         End timestamp of the fault.
+    algorithm: string, optional
+        Name of the algorithm used to detect outliers.
+        Options: 'Default', 'Filter'.
+        - 'Default': uses the default model to detect outliers.
+        - 'Filter': uses a moving average filter to detect outliers.
     """               
     fig, ax = plt.subplots(3,2, figsize = (15,12))
 
@@ -280,7 +286,7 @@ def complete_analysis (model, X_train, X_validation, X_test,
                                 
     # PLOTTING SPE
                 
-    model.plot_SPE(ax = ax[0,0], logy = logy)
+    model.plot_SPE(ax = ax[0,0], logy = logy, algorithm = algorithm)
     ax[0,0].set_title('Training')
 
     # PLOTTING PREDICTIONS
@@ -294,11 +300,11 @@ def complete_analysis (model, X_train, X_validation, X_test,
 
     model.predict(X_validation, Y_validation, 
                   count_window_size = count_window_size, 
-                  redefine_limit = True)
+                  redefine_limit = True, algorithm=algorithm)
 
     # PLOTTING SPE
 
-    model.plot_SPE(ax = ax[1,0], train_or_test = 'test', logy = logy)
+    model.plot_SPE(ax = ax[1,0], train_or_test = 'test', logy = logy, algorithm = algorithm)
     ax[1,0].set_title('Validation')
 
     # PLOTTING PREDICTIONS
@@ -313,11 +319,11 @@ def complete_analysis (model, X_train, X_validation, X_test,
     model.predict(X_test, Y_test, 
                   count_window_size = count_window_size, 
                   count_limit = count_limit,
-                  redefine_limit = False)
+                  redefine_limit = True, algorithm=algorithm)
 
     # PLOTTING SPE
 
-    model.plot_SPE(ax = ax[2,0], train_or_test = 'test', logy = logy)
+    model.plot_SPE(ax = ax[2,0], train_or_test = 'test', logy = logy, algorithm = algorithm)
     ax[2,0].set_title('Test')
 
     if fault_start is not None:
@@ -341,7 +347,7 @@ def complete_analysis (model, X_train, X_validation, X_test,
             ax[2,1].axvline(datetime.strptime(str(fault_end),
                                               '%Y-%m-%d %H:%M:%S'), ls = '--')
         
-    fig.tight_layout();
+    fig.tight_layout()
             
 ##############################################################################
 
@@ -547,7 +553,7 @@ def comparative_table (models, X_train, X_validation, X_test,
         model.predict(X_test, Y_test, 
                       count_window_size = count_window_size, 
                       count_limit = count_limit,
-                      redefine_limit = False)
+                      redefine_limit = True)
 
         # TERMS FOR PREDICTION TABLE
         
@@ -619,9 +625,9 @@ def comparative_table (models, X_train, X_validation, X_test,
                                                  '%Y-%m-%d %H:%M:%S'), ls='--')
 
         if plot_SPE:            
-            fig_spe.tight_layout();
+            fig_spe.tight_layout()
         if plot_predictions:
-            fig_pred.tight_layout();
+            fig_pred.tight_layout()
             
     ######## GENERATING FINAL TABLES ########
         
