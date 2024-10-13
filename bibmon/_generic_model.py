@@ -208,7 +208,7 @@ class GenericModel (ABC):
         tp = SPE.mean() + n_sigma * np.sqrt(var_ma)
 
         return tp
-    
+
     ###########################################################################
         
     def load_model (self, limSPE, SPE_mean, count_window_size,
