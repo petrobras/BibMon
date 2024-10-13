@@ -175,7 +175,7 @@ class GenericModel (ABC):
     
     ###########################################################################
 
-    def calculate_tipping_point(self, train_or_test='train', filter_delay_in_samples=10, n_sigma=6):
+    def calculate_tipping_point(self, train_or_test='train', n_sigma=6):
         """
         Finds the tipping point for the alarm system using a moving average filter
 
@@ -183,8 +183,6 @@ class GenericModel (ABC):
         ----------
         train_or_test: str, optional
             Context of the fit.
-        filter_delay_in_samples: int, optional
-            Number of samples the filter takes to respond.
         n_sigma: int, optional
             Number of the moving average's standard deviations the tipping point is above the SPE mean.
 
@@ -201,7 +199,7 @@ class GenericModel (ABC):
             SPE = self.SPE_test
 
         # Moving average filter constant
-        alpha = 1 - np.exp(-1 / filter_delay_in_samples)
+        alpha = 0.0951625
 
         # Moving average variance
         var_ma = SPE.var() * (alpha ** 2) / (1 - (1 - alpha) ** 2)
@@ -210,7 +208,7 @@ class GenericModel (ABC):
         tp = SPE.mean() + n_sigma * np.sqrt(var_ma)
 
         return tp
-
+    
     ###########################################################################
         
     def load_model (self, limSPE, SPE_mean, count_window_size,
