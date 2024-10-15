@@ -3,7 +3,7 @@ import pandas as pd
 import importlib.resources as pkg_resources
 from typing import Literal
 
-from ._bibmon_tools import create_df_with_dates
+from . import _bibmon_tools as b_tools
 from . import real_process_data, tennessee_eastman, three_w
 
 ###############################################################################
@@ -55,17 +55,17 @@ def load_tennessee_eastman(train_id=0, test_id=0):
             for ii in range(52):
                 train_df[tags[ii]] = [float(s) for s in tmp2[0][ii].split("  ")]
 
-            train_df = create_df_with_dates(train_df, freq="3min")
+            train_df = b_tools.create_df_with_dates(train_df, freq="3min")
 
         else:
 
-            train_df = create_df_with_dates(
+            train_df = b_tools.create_df_with_dates(
                 pd.read_csv(filepath, sep="\s+", names=tags), freq="3min"
             )
 
     with pkg_resources.path(tennessee_eastman, file_test) as filepath:
 
-        test_df = create_df_with_dates(
+        test_df = b_tools.create_df_with_dates(
             pd.read_csv(filepath, sep="\s+", names=tags),
             start="2020-02-01 00:00:00",
             freq="3min",
