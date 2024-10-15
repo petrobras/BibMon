@@ -1,9 +1,10 @@
 import os
 import pandas as pd
 import importlib.resources as pkg_resources
+from typing import Literal
 
 from ._bibmon_tools import create_df_with_dates
-from . import real_process_data, tennessee_eastman 
+from . import real_process_data, tennessee_eastman, three_w
 
 ###############################################################################
 
@@ -88,3 +89,33 @@ def load_real_data ():
 
     with pkg_resources.path(real_process_data,'real_process_data.csv') as file:
         return pd.read_csv(file,index_col = 0, parse_dates = True)
+
+###############################################################################
+
+AVAILABLE_3W_CLASSES = ['8']
+
+def load_3w (dataset_class: Literal['8'] = '8'):
+    """
+    Load the '3W-8' benchmark data.
+
+    Parameters
+    ----------
+    dataset_class: string
+        Identifier of the dataset class.
+        Available classes: '8'.
+    Returns
+    ----------                
+    : pandas.DataFrame
+        Process data.
+    """
+
+    if dataset_class != '8':
+        raise ValueError(f'Dataset class not available. Available classes: {AVAILABLE_3W_CLASSES}')
+    
+    with pkg_resources.path(three_w,'WELL-00019_20120601165020.parquet') as file:
+        with pkg_resources.path(three_w, 'dataset.ini') as path:
+            ini = three_w.tools.parse_dataset_ini(path)
+            return pd.read_parquet(
+                file,
+                engine=ini.get("PARQUET_SETTINGS", "PARQUET_ENGINE"),
+            )
