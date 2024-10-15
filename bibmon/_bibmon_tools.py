@@ -208,6 +208,8 @@ def complete_analysis (model, X_train, X_validation, X_test,
                        count_window_size = 0,
                        fault_start = None,
                        fault_end = None,
+                       transient_start = None,
+                       transient_end = None,
                        algorithm = 'Default'):
     """
     Performs a complete monitoring analysis, with train, validation, and test.
@@ -263,6 +265,10 @@ def complete_analysis (model, X_train, X_validation, X_test,
         Start timestamp of the fault.
     fault_end: string, optional
         End timestamp of the fault.
+    transient_start: string, optional
+        Start timestamp of the transient state.
+    transient_end: string, optional
+        End timestamp of the transient state.
     algorithm: string, optional
         Name of the algorithm used to detect outliers.
         Options: 'Default', 'Filter'.
@@ -332,6 +338,13 @@ def complete_analysis (model, X_train, X_validation, X_test,
     if fault_end is not None:
         ax[2,0].axvline(datetime.strptime(str(fault_end),
                                           '%Y-%m-%d %H:%M:%S'), ls = '--')
+    
+    if transient_start is not None:
+        ax[2,0].axvline(datetime.strptime(str(transient_start),
+                                          '%Y-%m-%d %H:%M:%S'), ls = '--', color = 'green')
+    if transient_end is not None:
+        ax[2,0].axvline(datetime.strptime(str(transient_end),
+                                          '%Y-%m-%d %H:%M:%S'), ls = '--', color = 'green')
 
     # PLOTTING PREDICTIONS
 
@@ -346,6 +359,14 @@ def complete_analysis (model, X_train, X_validation, X_test,
         if fault_end is not None:
             ax[2,1].axvline(datetime.strptime(str(fault_end),
                                               '%Y-%m-%d %H:%M:%S'), ls = '--')
+            
+        if transient_start is not None:
+            ax[2,1].axvline(datetime.strptime(str(transient_start),
+                                              '%Y-%m-%d %H:%M:%S'), ls = '--', color = 'green')
+        
+        if transient_end is not None:
+            ax[2,1].axvline(datetime.strptime(str(transient_end),
+                                              '%Y-%m-%d %H:%M:%S'), ls = '--', color = 'green')
         
     fig.tight_layout()
             
@@ -368,6 +389,8 @@ def comparative_table (models, X_train, X_validation, X_test,
                        count_window_size = 0,
                        fault_start = None,
                        fault_end = None,
+                       transient_start = None,
+                       transient_end = None,
                        mask = None,
                        times = True,
                        plot_SPE = True,
@@ -429,6 +452,10 @@ def comparative_table (models, X_train, X_validation, X_test,
         Start timestamp of the fault.
     fault_end: string, optional
         End timestamp of the fault.
+    transient_start: string, optional
+        Start timestamp of the transient state.
+    transient_end: string, optional
+        End timestamp of the transient state.
     mask: numpy.array, optional
         Boolean array indicating the indices where the process is
         in fault.
@@ -585,6 +612,20 @@ def comparative_table (models, X_train, X_validation, X_test,
                             value[fault_start:fault_end].mean()
                         false_detection_rates[model.name+': '+key] = \
                             value[:fault_start][:-1].mean()
+            
+            if transient_start is not None:
+                for key, value in model.alarms.items():
+                    if transient_end is not None:
+                        detection_alarms[model.name+': '+key] = \
+                            value[transient_start:transient_end][:-1].mean()
+                        false_detection_rates[model.name+': '+key] = \
+                            pd.concat([value[:transient_start][:-1],
+                                    value[transient_end:]]).mean()
+                    else:
+                        detection_alarms[model.name+': '+key] = \
+                            value[transient_start:transient_end].mean()
+                        false_detection_rates[model.name+': '+key] = \
+                            value[:transient_start][:-1].mean()
         else:
             for key, value in model.alarms.items():
                 detection_alarms[model.name+': '+key] = \
@@ -608,6 +649,16 @@ def comparative_table (models, X_train, X_validation, X_test,
                 ax_spe[i,2].axvline(datetime.strptime(str(fault_end),
                                                       '%Y-%m-%d %H:%M:%S'), 
                                                       ls='--')
+            
+            if transient_start is not None:
+                ax_spe[i,2].axvline(datetime.strptime(str(transient_start),
+                                                      '%Y-%m-%d %H:%M:%S'), 
+                                                      ls='--', color = 'green')
+            
+            if transient_end is not None:
+                ax_spe[i,2].axvline(datetime.strptime(str(transient_end),
+                                                      '%Y-%m-%d %H:%M:%S'), 
+                                                      ls='--', color = 'green')
 
         # PLOTTING PREDICTIONS
                 
@@ -623,6 +674,14 @@ def comparative_table (models, X_train, X_validation, X_test,
                 if fault_end is not None:
                     ax_pred[i,2].axvline(datetime.strptime(str(fault_end),
                                                  '%Y-%m-%d %H:%M:%S'), ls='--')
+                
+                if transient_start is not None:
+                    ax_pred[i,2].axvline(datetime.strptime(str(transient_start),
+                                                 '%Y-%m-%d %H:%M:%S'), ls='--', color = 'green')
+                
+                if transient_end is not None:
+                    ax_pred[i,2].axvline(datetime.strptime(str(transient_end),
+                                                 '%Y-%m-%d %H:%M:%S'), ls='--', color = 'green')
 
         if plot_SPE:            
             fig_spe.tight_layout()
@@ -681,6 +740,24 @@ def comparative_table (models, X_train, X_validation, X_test,
         detection_table.index = index
 
         return_tables.append(detection_table.swaplevel().sort_index(axis=0))
+    
+    if transient_start is not None:
+            detection_table = pd.DataFrame([detection_alarms, 
+                                            false_detection_rates],
+                                        index = ['FDR','FAR']).T
+            
+            models_names = [models[i].name for i in range(len(models))]
+            alarms_names = [list(model.alarms.keys())[i] for i in 
+                    range(len(list(model.alarms.keys())))]  
+            
+            iterables = [models_names, alarms_names]
+    
+            index = pd.MultiIndex.from_product(iterables, 
+                                            names = ['Models', 'Alarms'])
+            
+            detection_table.index = index
+    
+            return_tables.append(detection_table.swaplevel().sort_index(axis=0))
         
     # COMPUTATIONAL TIMES
         
