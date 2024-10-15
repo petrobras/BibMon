@@ -9,6 +9,8 @@ Created on Thu Sep  3 23:38:16 2020
 import bibmon
 import pandas as pd
 
+import bibmon.three_w
+
 def test_complete_analysis():
     
     # load data
@@ -86,3 +88,15 @@ def test_split_df_percentages_error():
         _ = bibmon._bibmon_tools.split_df_percentages(data, [0.6, 0.2])
     except ValueError:
         assert True
+
+def test_3w_load_dataset_ini():
+    config = bibmon.three_w.tools.load_dataset_ini("dataset.ini")
+
+    assert config["VERSION"]["DATASET"] == "2.0.0"
+
+def test_3w_split_dataset():
+    data, conf = bibmon.load_3w()
+
+    train_df, validation_df, test_df = bibmon.three_w.tools.split_dataset(data, conf)
+    
+    assert (train_df.shape[0], validation_df.shape[0], test_df.shape[0]) == (85112, 21278, 136746)
