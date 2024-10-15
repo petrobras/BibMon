@@ -740,3 +740,39 @@ def find_df_transitions(
                 previous_event = df[label].iloc[i]
 
     return transitions
+
+###############################################################################
+
+def split_df_percentages(df: pd.DataFrame, percentages: list[float]) -> list[pd.DataFrame]:
+    """
+    Splits a DataFrame into multiple DataFrames according to the given percentages, the sum of percentages must equal 1.
+
+    For example, if percentage = [0.6, 0.2, 0.2], the function will return a list with three DataFrames, the first one with 60% of the data, the second one with 20% and the third one with 20%.
+
+    Warning: This function may cause data loss if the split cannot be done exactly according to the percentages.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Data to be split.
+    percentages: list of floats
+        List of percentages to be used in the split.
+
+    Returns
+    ----------
+    : list of pandas.DataFrames
+        List with the split DataFrames.
+    """
+
+    if sum(percentages) != 1:
+        raise ValueError("The sum of the percentages must be 1.")
+
+    split_dfs = []
+    start = 0
+
+    for i in range(len(percentages)):
+        end = start + int(percentages[i] * len(df))
+        split_dfs.append(df.iloc[start:end])
+        start = end
+
+    return split_dfs

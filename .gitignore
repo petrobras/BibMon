@@ -172,3 +172,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Temporary files
+temp.py

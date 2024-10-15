@@ -69,3 +69,20 @@ def test_find_df_transitions():
     transitions = bibmon._bibmon_tools.find_df_transitions(data, 1, "number", "tag101")
 
     assert transitions == [99, 101, 102, 103, 104, 106, 107, 108, 243]
+
+def test_split_df_percentages():
+    data = bibmon.load_real_data()
+
+    splitted = bibmon._bibmon_tools.split_df_percentages(data, [0.6, 0.2, 0.2])
+
+    assert splitted[0].shape[0] == 1901
+    assert splitted[1].shape[0] == 633
+    assert splitted[2].shape[0] == 633
+
+def test_split_df_percentages_error():
+    data = bibmon.load_real_data()
+
+    try:
+        _ = bibmon._bibmon_tools.split_df_percentages(data, [0.6, 0.2])
+    except ValueError:
+        assert True
