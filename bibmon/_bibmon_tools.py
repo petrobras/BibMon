@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 import matplotlib.pyplot as plt
+from typing import Literal
 
 ###############################################################################
 
@@ -693,3 +694,49 @@ def comparative_table (models, X_train, X_validation, X_test,
         return_tables.append(times_df)
         
     return return_tables
+
+##############################################################################
+
+def find_df_transitions(
+    df: pd.DataFrame,
+    threshold: float = 1,
+    data_type: Literal["string", "number"] = "number",
+    label: str = None,
+) -> list[int]:
+    """
+    Finds transitions in a DataFrame. This can be used to find indices of interesting events in the data.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Data to be analyzed.
+    threshold: float, optional
+        Threshold to be used in the transition detection, this is the minimum difference between two consecutive points. Will be used only if data_type is 'number'.
+    data_type: str, optional
+        Type of data to be analyzed. If 'number', the threshold will be used to detect transitions. If 'string', the function will look for changes in the values.
+    label: str
+        Label to be used in the transition detection.
+
+    Returns
+    ----------
+    : list of ints
+        Indices of the transitions.
+    """
+
+    if label is None:
+        return []
+
+    transitions = []
+    previous_event = df[label].iloc[0]
+
+    for i in range(1, len(df)):
+        if data_type == "number":
+            if abs(df[label].iloc[i] - previous_event) > threshold:
+                transitions.append(i)
+                previous_event = df[label].iloc[i]
+        elif data_type == "string":
+            if df[label].iloc[i] != previous_event:
+                transitions.append(i)
+                previous_event = df[label].iloc[i]
+
+    return transitions
