@@ -60,4 +60,12 @@ def test_complete_analysis():
                             fault_start = '2018-01-02 06:00:00',
                             fault_end = '2018-01-02 09:00:00') 
     
-    model.plot_importances()                                                                             
+    model.plot_importances()
+
+
+def test_find_df_transitions():
+    data = bibmon.load_real_data()
+
+    transitions = bibmon._bibmon_tools.find_df_transitions(data, 1, "number", "tag101")
+
+    assert transitions == [99, 101, 102, 103, 104, 106, 107, 108, 243]
