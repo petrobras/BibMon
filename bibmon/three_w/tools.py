@@ -24,12 +24,10 @@ def load_dataset_ini(dataset_ini_path) -> configparser.ConfigParser:
 
     return config
 
-
 ###############################################################################
 
-
 def split_dataset(
-    DataFrame: pd.DataFrame,
+    dataFrame: pd.DataFrame,
     config_file: configparser.ConfigParser,
     training_percentage: float = 0.8,
     validation_percentage: float = 0.2,
@@ -63,7 +61,7 @@ def split_dataset(
             "The sum of training and validation percentages must equals 1."
         )
 
-    df_processed = preproc.PreProcess(f_pp=["ffill_nan"]).apply(DataFrame)
+    df_processed = preproc.PreProcess(f_pp=["ffill_nan"]).apply(dataFrame)
 
     transitions = b_tools.find_df_transitions(df_processed, 1, "number", "class")
 
@@ -97,3 +95,8 @@ def split_dataset(
     validation_df = splitted_df[1]
 
     return train_df, validation_df, test_df
+
+###############################################################################
+
+def format_for_llm_prediction(df: pd.DataFrame, config_file: configparser.ConfigParser):
+    pass
