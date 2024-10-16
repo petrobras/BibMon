@@ -90,12 +90,12 @@ def test_split_df_percentages_error():
         assert True
 
 def test_3w_load_dataset_ini():
-    config = bibmon.three_w.tools.load_dataset_ini("dataset.ini")
+    config = bibmon.three_w.tools.load_dataset_ini()
 
     assert config["VERSION"]["DATASET"] == "2.0.0"
 
 def test_3w_split_dataset():
-    data, conf = bibmon.load_3w()
+    data, conf, _ = bibmon.load_3w()
 
     train_df, validation_df, test_df = bibmon.three_w.tools.split_dataset(data, conf)
     

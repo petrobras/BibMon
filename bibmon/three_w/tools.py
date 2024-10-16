@@ -3,16 +3,14 @@ import pandas as pd
 from .. import _preprocess as preproc
 from .. import _bibmon_tools as b_tools
 from typing import Literal, Tuple
+import os
 
-
-def load_dataset_ini(dataset_ini_path) -> configparser.ConfigParser:
+def load_dataset_ini() -> configparser.ConfigParser:
     """
     Loads the dataset.ini file.
 
     Parameters
     ----------
-    dataset_ini_path: string
-        Path to the dataset.ini file.
     Returns
     ----------
     : configparser.ConfigParser
@@ -20,7 +18,7 @@ def load_dataset_ini(dataset_ini_path) -> configparser.ConfigParser:
     """
 
     config = configparser.ConfigParser()
-    config.read(dataset_ini_path)
+    config.read(os.path.join(os.path.dirname(__file__), "dataset.ini"))
 
     return config
 

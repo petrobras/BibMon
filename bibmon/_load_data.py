@@ -1,7 +1,12 @@
 import os
 import pandas as pd
 import importlib.resources as pkg_resources
-from typing import Literal
+from typing import Tuple
+import requests
+import io
+import configparser
+from tqdm import tqdm
+
 
 from . import _bibmon_tools as b_tools
 from . import real_process_data, tennessee_eastman, three_w
@@ -94,38 +99,73 @@ def load_real_data():
 
 ###############################################################################
 
-AVAILABLE_3W_CLASSES = ["8"]
-
-
-def load_3w(dataset_class: Literal["8"] = "8"):
+def load_3w(dataset_class: int = 8, dataset_name: str = "WELL-00019_20120601165020.parquet") -> Tuple[pd.DataFrame, configparser.ConfigParser, int]:
     """
-    Load the '3W-8' benchmark data.
+    Load the '3W-8' benchmark data. If it receives a different class or dataset name, it will try to download from the repository.
+
+    Warning: This assumes that the dataset is available in the repository. If the dataset is not available, the function will raise an error. This will not download a new config file.
 
     Parameters
     ----------
-    dataset_class: string
+    dataset_class: int, optional
         Identifier of the dataset class.
-        Available classes: '8'.
+    dataset_name: str, optional
+        Name of the dataset file.
     Returns
     ----------
     : pandas.DataFrame
         Process data.
     : configparser.ConfigParser
         Configuration file.
-    """
+    : int
+        Identifier of the dataset class.
 
-    if dataset_class != "8":
-        raise ValueError(
-            f"Dataset class not available. Available classes: {AVAILABLE_3W_CLASSES}"
+    """
+    data_frame: pd.DataFrame = None
+    ini = three_w.tools.load_dataset_ini()
+
+    if dataset_class == 8 and dataset_name == "WELL-00019_20120601165020.parquet":
+        with pkg_resources.path(three_w, dataset_name) as file:
+            data_frame = pd.read_parquet(
+                file,
+                engine=ini.get("PARQUET_SETTINGS", "PARQUET_ENGINE"),
+            )
+    else:
+        data_set_url = f'https://github.com/petrobras/3W/raw/refs/heads/main/dataset/{dataset_class}/{dataset_name}'
+
+        print(f"Downloading dataset from {data_set_url}")
+
+        # Send a head request to know the total file size in advance
+        response = requests.head(data_set_url)
+        file_size = int(response.headers.get('content-length', 0))  # Get file size from headers
+
+        # Download the file with a progress bar
+        response = requests.get(data_set_url, stream=True)
+        response.raise_for_status()  # Check if the request was successful
+
+        parquet_file = io.BytesIO()
+
+        chunk_size = 1024
+        with tqdm(total=file_size, unit='B', unit_scale=True, desc=dataset_name) as pbar:
+            for chunk in response.iter_content(chunk_size=chunk_size):
+                parquet_file.write(chunk)
+                pbar.update(len(chunk))
+
+        # Reset the BytesIO buffer's position to the beginning
+        parquet_file.seek(0)
+
+        data_frame = pd.read_parquet(
+            parquet_file,
+            engine=ini.get("PARQUET_SETTINGS", "PARQUET_ENGINE"),
         )
 
-    with pkg_resources.path(three_w, "WELL-00019_20120601165020.parquet") as file:
-        with pkg_resources.path(three_w, "dataset.ini") as path:
-            ini = three_w.tools.load_dataset_ini(path)
-            return (
-                pd.read_parquet(
-                    file,
-                    engine=ini.get("PARQUET_SETTINGS", "PARQUET_ENGINE"),
-                ),
-                ini,
-            )
+    if data_frame is None:
+        raise ValueError("The dataset could not be loaded.")
+    if ini is None:
+        raise ValueError("The dataset configuration file could not be loaded.")
+
+    return (
+        data_frame,
+        ini,
+        int(dataset_class),
+    )
