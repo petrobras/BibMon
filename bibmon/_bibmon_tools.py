@@ -693,3 +693,261 @@ def comparative_table (models, X_train, X_validation, X_test,
         return_tables.append(times_df)
         
     return return_tables
+
+##############################################################################
+# complete_analysis + comparative_table
+
+def compare_variables_for_regression (data, start_train, end_train, 
+                          end_validation, end_test, 
+                          tags,
+                          model,
+                          metrics, count_window_size, count_limit,
+                          fault_start,
+                          fault_end,
+                          tags_X = None,
+                          f_pp_train = ['remove_empty_variables',
+                                     'ffill_nan',
+                                     'remove_frozen_variables',
+                                     'normalize',
+                                     'moving_average_filter'],
+                          a_pp_train = None,
+                          f_pp_test = ['replace_nan_with_values',
+                                    'normalize',
+                                      'moving_average_filter'],
+                          a_pp_test = None,
+                          mask = None
+                                     ):
+    """
+    Compare variables for regression analysis by training, validating, 
+    and testing a model on different data splits and generating relevant 
+    metrics for prediction and fault detection.
+
+    Parameters
+    ----------
+    data: pandas.DataFrame
+        DataFrame containing the time series data for the variables of interest.
+    start_train: string
+        Start timestamp of the training data.
+    end_train: string
+        End timestamp of the training data.
+    end_validation: string
+        End timestamp of the validation data.
+    end_test: string
+        End timestamp of the test data.
+    tags: list of strings
+        List of variable names (tags) to be used as targets (Y) in the model.
+    
+    model: BibMon model
+        Model to be considered in the analysis.
+    metrics: list of functions, optional
+        Functions for calculating metrics to be displayed in the title of 
+        the graph.
+    count_window_size: int, optional
+        Window sizes used in count alarm calculation.
+    count_limit: int, optional
+        Limit of points to be considered in the window 
+        for the count alarm to sound.
+    fault_start: string, optional
+        Start timestamp of the fault.
+    fault_end: string, optional
+        End timestamp of the fault.
+    tags_X: list of strings
+        Variables to be considered in the X set.
+    f_pp_train: list, optional
+        List containing strings with names of functions to be used 
+        in pre-processing the train data (the functions are defined in the 
+        PreProcess class, in the BibMon_Tools.py file).
+    a_pp_train: dict, optional
+        Dictionary containing the parameters to be provided
+        to each function to perform pre-processing of the train data, in
+        the format {'functionname__argname': argvalue, ...}.    
+    f_pp_test: list, optional
+        List containing strings with names of functions to be used 
+        in pre-processing the test data (the functions are defined in the 
+        PreProcess class, in the BibMon_Tools.py file).
+    a_pp_test: dict, optional
+        Dictionary containing the parameters to be provided
+        to each function to perform pre-processing of the test data, in
+        the format {'functionname__argname': argvalue, ...}.
+    mask: numpy.array, optional
+        Boolean array indicating the indices where the process is
+        in fault.
+    
+    Returns
+    ----------
+    return_tables: list of pandas.DataFrame
+        A list containing two or more DataFrames, depending on the parameters
+        passed:
+
+        - **Prediction table**: A DataFrame containing prediction metrics
+          (such as error metrics) for training, validation, and test data.
+          The table is multi-indexed, with tags (variables) and metrics as
+          the indices. Each metric is calculated for each tag and data split
+          (train, validation, test).
+
+        - **Detection table**: (Optional) A DataFrame that includes detection
+          metrics, such as False Detection Rate (FDR) and False Alarm Rate (FAR),
+          for each tag and fault detection alarm. This table is returned if 
+          `fault_start` is provided, and it includes performance information
+          related to the model’s ability to detect faults during the specified
+          period. It is also multi-indexed, with tags and alarms as the indices.
+
+        The function returns these tables to provide a detailed analysis of
+        model performance and fault detection.
+    """
+
+    return_tables = []
+    
+    train_metrics = {}     
+    validation_metrics = {}        
+    test_metrics = {}        
+
+    detection_alarms = {}
+    false_detection_rates = {}
+
+    errorTags = []
+    for tag_Y in tags:
+        try:
+            if not isinstance(tag_Y, list): tag_Y = [tag_Y]
+    
+            (X_train, X_validation, 
+             X_test, Y_train, 
+             Y_validation, Y_test) = train_val_test_split(data, 
+                                                                 start_train = start_train,
+                                                                 end_train = end_train, 
+                                                                 end_validation = end_validation,
+                                                                 end_test = end_test,
+                                                                 tags_X = tags_X,
+                                                                 tags_Y = tag_Y) 
+
+            ######## TRAINING ########
+            lim_conf = 0.99
+    
+            model.fit(X_train, Y_train, 
+                      f_pp = f_pp_train,
+                      a_pp = a_pp_train,
+                      f_pp_test = f_pp_test,
+                      a_pp_test = a_pp_test,
+                      lim_conf = lim_conf,
+                      redefine_limit = False)
+            
+            if metrics is not None:
+                if model.has_Y:
+                    true = model.Y_train_orig
+                    pred = model.Y_train_pred_orig
+              
+                for mr in metrics:
+                    true, pred = align_dfs_by_rows(true.dropna(), pred)
+                    train_metrics[tag_Y[0] +': '+mr.__name__] = mr(true, pred)
+                            
+            ######## VALIDATION ########
+            model.predict(X_validation, Y_validation, 
+                          count_window_size = count_window_size, 
+                          redefine_limit = True)        
+    
+            if metrics is not None:
+                if model.has_Y:
+                    true = model.Y_test_orig
+                    pred = model.Y_test_pred_orig
+           
+                for mr in metrics:
+                    true, pred = align_dfs_by_rows(true.dropna(), pred)
+                    validation_metrics[tag_Y[0] +': '+mr.__name__] = mr(true, pred)
+    
+    
+            ######## TEST ########
+                    
+            model.predict(X_test, Y_test, 
+                          count_window_size = count_window_size, 
+                          count_limit = count_limit,
+                          redefine_limit = False)
+    
+            if metrics is not None:
+                if model.has_Y:
+                    true = model.Y_test_orig
+                    pred = model.Y_test_pred_orig
+            
+                for mr in metrics:
+                    true, pred = align_dfs_by_rows(true.dropna(), pred)
+                    test_metrics[tag_Y[0] +': '+mr.__name__] = mr(true, pred)
+
+                # TERMS FOR DETECTION TABLE
+        
+                if mask is None:
+                    if fault_start is not None:            
+                        for key, value in model.alarms.items():
+                            if fault_end is not None:
+                                detection_alarms[tag_Y[0]+': '+key] = \
+                                    value[fault_start:fault_end][:-1].mean()
+                                false_detection_rates[tag_Y[0]+': '+key] = \
+                                    pd.concat([value[:fault_start][:-1], 
+                                            value[fault_end:]]).mean()
+                            else:
+                                detection_alarms[tag_Y[0]+': '+key] = \
+                                    value[fault_start:fault_end].mean()
+                                false_detection_rates[tag_Y[0]+': '+key] = \
+                                    value[:fault_start][:-1].mean()
+                else:
+                    for key, value in model.alarms.items():
+                        detection_alarms[tag_Y[0]+': '+key] = \
+                            mask[mask==1].eq(value[value==1]).astype(int).mean()
+                        false_detection_rates[tag_Y[0]+': '+key] = \
+                            1-mask[mask==0].eq(value[value==0]).astype(int).mean()
+
+                    
+        except ValueError as err:
+            errorTags.append(tag_Y[0])
+            print("Erro com a tag:" + tag_Y[0])
+            
+    tags = [key for key in tags if key not in errorTags]
+
+    return_tables = []
+        
+    # PREDICTION
+    if metrics is not None:
+
+        prediction_table = pd.DataFrame([train_metrics, validation_metrics,
+                                         test_metrics], 
+                                        index = ['Train',
+                                                 'Validation',
+                                                 'Test']).T
+                                                            
+        tags_names = [tags[i] for i in range(len(tags))]
+        metrics_names = [metrics[i].__name__ for i in range(len(metrics))]
+        
+        iterables = [tags_names, metrics_names]
+
+        index = pd.MultiIndex.from_product(iterables, 
+                                           names = ['Tags', 'Metrics'])
+        
+        message = ("The MultiIndex table is not of the right size. "+
+                   "This could happen when two tags have the same name.")
+        
+        try:
+            prediction_table.index = index
+        except ValueError as err:
+            raise ValueError(message) from err    
+        
+        return_tables.append(prediction_table.swaplevel().sort_index(axis=0))
+       
+        # DETECTION     
+        if fault_start is not None:
+            
+            detection_table = pd.DataFrame([detection_alarms, 
+                                            false_detection_rates],
+                                           index = ['FDR','FAR']).T
+            
+            tags_names = [tags[i] for i in range(len(tags))]
+            alarms_names = [list(model.alarms.keys())[i] for i in 
+                    range(len(list(model.alarms.keys())))]  
+            
+            iterables = [tags_names, alarms_names]
+    
+            index = pd.MultiIndex.from_product(iterables, 
+                                            names = ['Tags', 'Alarms'])
+            
+            detection_table.index = index
+    
+            return_tables.append(detection_table.swaplevel().sort_index(axis=0))
+
+    return return_tables
