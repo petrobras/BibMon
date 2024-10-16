@@ -7,3 +7,4 @@ seaborn>=0.13.2
 statsmodels>=0.14.1
 optuna>=3.6.1
 pyarrow>=17.0.0
+openai>=1.51.2
