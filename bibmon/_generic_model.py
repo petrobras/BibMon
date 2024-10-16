@@ -681,7 +681,7 @@ class GenericModel (ABC):
         
         # redefining the limit, for the validation case
         
-        if redefine_limit:
+        if redefine_limit or algorithm == 'Filter':
             iSPE = np.sort(self.SPE_test)
             if algorithm == "Default":
                 self.limSPE = iSPE[int(self.lim_conf*self.X_test.shape[0])]
