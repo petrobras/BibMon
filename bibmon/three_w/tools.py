@@ -1,9 +1,12 @@
 import configparser
 import pandas as pd
-from .. import _preprocess as preproc
-from .. import _bibmon_tools as b_tools
 from typing import Literal, Tuple
 import os
+import json
+
+from .. import _preprocess as preproc
+from .. import _bibmon_tools as b_tools
+
 
 def load_dataset_ini() -> configparser.ConfigParser:
     """
@@ -22,7 +25,9 @@ def load_dataset_ini() -> configparser.ConfigParser:
 
     return config
 
+
 ###############################################################################
+
 
 def split_dataset(
     dataFrame: pd.DataFrame,
@@ -94,7 +99,78 @@ def split_dataset(
 
     return train_df, validation_df, test_df
 
+
 ###############################################################################
 
-def format_for_llm_prediction(df: pd.DataFrame, config_file: configparser.ConfigParser):
-    pass
+
+def event_formatter(df: pd.DataFrame, config_file: configparser.ConfigParser, n_of_rows: int = 30) -> dict:
+    df_class = df.iloc[0]["class"]
+    event_name: str = None
+    if df_class == 0:
+        event_name = "normal"
+    elif df_class < 100:
+        event_name = "error"
+    else:
+        event_name = "transition"
+
+    average_values = json.dumps(df.mean().to_dict())
+    standard_deviation = json.dumps(df.std().to_dict())
+
+
+    # Converte into string, this dict contains other objects
+    head = json.dumps(df.head(n_of_rows).reset_index().map(str).to_dict())
+    tail = json.dumps(df.tail(n_of_rows).reset_index().map(str).to_dict())
+
+    
+
+    return {
+        "event_name": event_name,
+        "average_values": average_values,
+        "standard_deviation": standard_deviation,
+        "head": head,
+        "tail": tail,
+    }
+
+
+###############################################################################
+
+
+def format_for_llm_prediction(
+    df: pd.DataFrame, config_file: configparser.ConfigParser, class_id: int, n_of_rows: int = 30
+) -> dict:
+    event_names = config_file.get("EVENTS", "NAMES")
+
+    event_names_list = [
+        event.strip() for event in event_names.replace("\n", "").split(",")
+    ]
+
+    event_name = event_names_list[class_id]
+    event_description = config_file.get(event_name, "DESCRIPTION")
+
+    properties_section = config_file["PARQUET_FILE_PROPERTIES"]
+
+    # Create a dictionary with {name: description}
+    properties_dict = {key: value.strip() for key, value in properties_section.items()}
+
+    df_processed = preproc.PreProcess(f_pp=["ffill_nan"]).apply(df)
+
+    transitions = b_tools.find_df_transitions(df_processed, 1, "number", "class")
+
+    dataset_data: list[pd.DataFrame] = []
+
+    last_transition_offset = 0
+    for t in transitions:
+        target_df = df_processed.iloc[last_transition_offset:t]
+        dataset_data.append(event_formatter(target_df, config_file, n_of_rows))
+        last_transition_offset = t
+
+    # Last split
+    target_df = df_processed.iloc[last_transition_offset:]
+    dataset_data.append(event_formatter(target_df, config_file, n_of_rows))
+
+    return {
+        "event_name": event_name,
+        "event_description": event_description,
+        "columns_and_description": properties_dict,
+        "data": dataset_data,
+    }

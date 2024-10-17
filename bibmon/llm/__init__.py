@@ -1,27 +1,35 @@
 from openai import OpenAI
 from openai.types.chat.chat_completion import ChatCompletion
+import json
 
 from .types import *
 
-class LLM ():
-    def __init__(self, endpoint_url:str = "http://127.0.0.1:5000/v1", api_key:str ="NO_API_KEY", model:str = "llama3"):
-        self.client = OpenAI(
-            base_url=endpoint_url,
-            api_key=api_key)
-        self._model = model
-    
 
-    def chat_completion(self, 
-                        system_message: LlmMessage = LlmMessage("system", "You are a helpful assistant."),
-                        messages: List[LlmMessage] = [], 
-                        temperature: float = 0.1, 
-                        max_tokens: int = 4096, 
-                        top_p: float = 0.9, 
-                        frequency_penalty: float = 0.0, 
-                        presence_penalty: float = 0.0, 
-                        **other_params) -> ChatCompletion:
+class LLM:
+    def __init__(
+        self,
+        endpoint_url: str = "http://127.0.0.1:5000/v1",
+        api_key: str = "NO_API_KEY",
+        model: str = "llama3",
+    ):
+        self.client = OpenAI(base_url=endpoint_url, api_key=api_key)
+        self._model = model
+
+    def chat_completion(
+        self,
+        system_message: LlmMessage = LlmMessage(
+            "system", "You are a helpful assistant."
+        ),
+        messages: List[LlmMessage] = [],
+        temperature: float = 0.1,
+        max_tokens: int = 8192,
+        top_p: float = 0.9,
+        frequency_penalty: float = 0.0,
+        presence_penalty: float = 0.0,
+        **other_params,
+    ) -> ChatCompletion:
         """
-        Generates a chat completion using a language model, with adjustable parameters 
+        Generates a chat completion using a language model, with adjustable parameters
         for controlling the model's behavior, output length, and randomness.
 
         Parameters
@@ -32,7 +40,7 @@ class LLM ():
         messages: list of dict
             A list of messages (in dictionary format) forming the conversation history. Each dictionary must have 'role' and 'content' keys.
             Example: [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "Tell me a joke."}]
-            
+
         temperature: float, optional
             Controls the randomness of the response. Lower values make output more deterministic, while higher values make it more creative.
             Default is 0.7.
@@ -60,7 +68,7 @@ class LLM ():
         ----------
         ChatCompletion
             The generated chat completion response from the language model, typically containing the generated message and metadata.
-        
+
         Raises
         ----------
         ValueError
@@ -69,28 +77,53 @@ class LLM ():
 
         if not system_message:
             raise ValueError("The system message cannot be empty.")
-        
+
         dict_messages = [message.to_dict() for message in [system_message] + messages]
 
 
-        return self.client.chat.completions.create(
-            messages=dict_messages, 
-            model=self._model, 
-            temperature=temperature, 
-            max_tokens=max_tokens, 
-            top_p=top_p, 
-            frequency_penalty=frequency_penalty, 
-            presence_penalty=presence_penalty, 
-            **other_params  # Forward other optional parameters
-        )
-    
 
-    def chat_completion_json_tool(self, tool_schema: dict, 
-                        system_message: LlmMessage = LlmMessage("system", "You are a helpful assistant."),
-                        messages: List[LlmMessage] = [], **other_params):
-        
-        
-  
-        system_message.content +=  "You will only respond using the following JSON schema: " + str(tool_schema)
+        return self.client.chat.completions.create(
+            messages=dict_messages,
+            model=self._model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            top_p=top_p,
+            frequency_penalty=frequency_penalty,
+            presence_penalty=presence_penalty,
+            **other_params,  # Forward other optional parameters
+        )
+
+    def chat_completion_json_tool(
+        self,
+        tool_schema: LlmToolSchema,
+        system_message: LlmMessage = LlmMessage(
+            "system", "You are a helpful assistant."
+        ),
+        messages: List[LlmMessage] = [],
+        **other_params,
+    ):
+
+        system_message.content += (
+            "You will only respond using the following JSON schema: "
+            + json.dumps(tool_schema.to_dict())
+        )
 
         return self.chat_completion(system_message, messages, **other_params)
+
+    def parse_chat_completion(self, completion: ChatCompletion) -> List[LlmMessage]:
+        """
+        Parses a chat completion response from the language model into a list of messages.
+
+        Parameters
+        ----------
+        completion: ChatCompletion
+            The chat completion response from the language model.
+
+        Returns
+        ----------
+        list of dict
+            A list of messages (in dictionary format) forming the conversation history. Each dictionary has 'role' and 'content' keys.
+            Example: [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "Tell me a joke."}]
+        """
+
+        return completion.choices[0].message.content
