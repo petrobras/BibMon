@@ -693,3 +693,75 @@ def comparative_table (models, X_train, X_validation, X_test,
         return_tables.append(times_df)
         
     return return_tables
+
+##############################################################################
+
+def plotFilteredData(data, color, title, notWantedTags = [], removeNaNColumns = True, removeZeroColumns = True):
+    """
+    Filters and plots data from a dictionary, concatenating the values into a single DataFrame.
+    Optionally removes columns that contain only NaN values or only zeros. The remaining data is
+    plotted with each column displayed in individual vertically stacked subplots, sharing the same X-axis.
+
+    Parameters
+    ----------
+    data: dict
+        A dictionary containing the data. The keys represent categories or filenames, and 
+        the values are pandas DataFrames.
+    color: string
+        The color to be used for the plot lines.
+    title: string
+        The main title for the plot.
+    notWantedTags: list, optional
+        A list of column names (tags) to be excluded from the plots. Default is an empty list.
+    removeNaNColumns: bool, optional
+        If True, columns with only NaN values will be removed from the data before plotting. Default is True.
+    removeZeroColumns: bool, optional
+        If True, columns that contain only zeros will be removed from the data before plotting. Default is True.
+
+    Returns
+    ----------
+    filteredByData: pandas.DataFrame
+        The processed and filtered data that was used in the visualization.
+    tags: list
+        A list of column names (tags) that were plotted.
+    """    
+
+    archivesKeys = data.keys()
+    
+    filteredByData = pd.concat([data[key] for key in archivesKeys])  # Concatenate data
+    filteredByData = filteredByData.apply(pd.to_numeric, errors='coerce')
+
+    if removeNaNColumns:
+        filteredByData = filteredByData.dropna(axis=1, how='all')  # Remove all-NaN columns
+
+    if removeZeroColumns:
+        filteredByData = filteredByData.loc[:, (filteredByData != 0).any(axis=0)]  # Remove all-zero columns
+
+    tags = list(filteredByData.keys())
+    tags = [key for key in tags if key not in notWantedTags]  # Remove unwanted tags
+
+    fig, ax = plt.subplots(len(tags), 1, figsize=(18, 10), sharex=True)
+    fig.suptitle(f"{title}", fontsize=16)
+    
+    for i, tag in enumerate(tags):
+        tagData = filteredByData[tag].values
+        ax[i].plot(tagData, c=color, linewidth=0.8)
+        ax[i].set_ylabel(tag, rotation=0, fontsize=14)
+        ax[i].set_yticks([])
+    
+        # Clean up unnecessary borders
+        ax[i].spines["top"].set_visible(False)
+        ax[i].spines["right"].set_visible(False)
+        ax[i].spines["left"].set_visible(False)
+    
+        if i < len(tags) - 1:  # Hide X-axis for all but the last plot
+            ax[i].set_xticks([])
+            ax[i].spines["bottom"].set_visible(False)
+            ax[i].xaxis.set_ticks_position('none')
+        else:
+            # Rotate X-axis labels for readability
+            for label in ax[i].get_xticklabels():
+                label.set_rotation(45)
+                label.set_ha('right')
+
+    return filteredByData, tags
