@@ -5,6 +5,7 @@ import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.model_selection import cross_val_score
+import xgboost as xgb
 
 class GridSearchModel:
     """
@@ -231,3 +232,28 @@ class GridSearchModel:
             'std_dev': scores.std(),
             'scores': scores
         }
+
+    def xgboost_best(self, df: pd.DataFrame, target_column: str):
+        """Perform grid search to find the best parameters for XGBRegressor."""
+        X = df.drop(columns=[target_column])
+        Y = df[target_column]
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=self.test_size, random_state=42)
+
+        param_grid = {
+            'n_estimators': [100, 200],
+            'learning_rate': [ 0.05, 0.1],
+            'max_depth': [None, 6],
+            'subsample': [0.1,0.5,],
+            'colsample_bytree': [0.1,0.5],
+            'gamma': [0, 0.1],
+            'reg_alpha': [0, 0.1],
+            'reg_lambda': [0.1, 0.5]
+        }
+
+        model = xgb.XGBRegressor(tree_method='gpu_hist', predictor='gpu_predictor', random_state=42)
+        self.grid_search = GridSearchCV(estimator=model, param_grid=param_grid, scoring=self.scoring, cv=self.cv, n_jobs=-1)
+        self.grid_search.fit(X_train, Y_train)
+        self.best_params_ = self.grid_search.best_params_
+        self.best_estimator_ = self.grid_search.best_estimator_
+
+        return self.best_estimator_

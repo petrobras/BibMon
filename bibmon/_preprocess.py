@@ -1,7 +1,7 @@
 import copy
-import pandas as pd 
+import pandas as pd
 import statsmodels.tsa.tsatools
-
+import numpy as np
 ###############################################################################
 
 class PreProcess ():
@@ -81,7 +81,7 @@ class PreProcess ():
 
     ###########################################################################
     
-    def apply(self, df, train_or_test = 'train') -> pd.DataFrame:
+    def apply(self, df, train_or_test = 'train'):
         """
         Sequentially applies the preprocessing functions 
         defined during initialization.
@@ -392,3 +392,111 @@ class PreProcess ():
             new_df.name = df.name
                         
         return new_df.drop(df.index[:WS])
+
+    def time_based_windowing(self, df, train_or_test='train', window_size='30min', agg_func= "max"):
+        """
+        Applies a rolling window based on time, where each window is determined by the timestamp index.
+        
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Data to be processed.
+        train_or_test: string, optional
+            Indicates which step the data corresponds to.
+        window_size: string, optional
+            Size of the time window (e.g., '30min' for 30 minutes, '1H' for 1 hour).
+        agg_func: string, optional
+            Aggregation function to apply within each window ('mean', 'sum', 'max', 'min', etc.).
+            
+        Returns
+        ----------                
+        : pandas.DataFrame
+            Processed data.
+        """
+        
+        if not pd.api.types.is_datetime64_any_dtype(df.index):
+            raise ValueError("DataFrame index must be a datetime type.")
+
+        if agg_func == 'mean':
+            return df.resample(window_size).mean()
+        elif agg_func == 'sum':
+            return df.resample(window_size).sum()
+        elif agg_func == 'max':
+            return df.resample(window_size).max()
+        elif agg_func == 'min':
+            return df.resample(window_size).min()
+        else:
+            raise ValueError("Unsupported aggregation function. Choose from 'mean', 'sum', 'max', or 'min'.")
+        
+        
+    def remove_constant_difference(self, df,train_or_test='train'):
+        """
+        Calculate the cumulative sum.
+        Drop columns with constant difference.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Data to be processed.
+        train_or_test: string, optional
+            Indicates which step the data corresponds to.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Processed DataFrame without columns containing constant difference.
+        """
+        cumulative_df = df.cumsum()
+        columns_to_drop = []
+
+        for column in cumulative_df.columns:
+            if not pd.api.types.is_numeric_dtype(cumulative_df[column]):
+                raise TypeError(f"'{column}' is not numeric type.")
+
+            diff = cumulative_df[column].diff()
+
+            # Verify constant difference
+            if len(diff.dropna()) > 1 and diff.nunique() == 1:
+                columns_to_drop.append(column)  
+
+        cumulative_df.drop(columns=columns_to_drop, inplace=True)
+        return cumulative_df
+
+    def differencing(self, df, train_or_test='train', lag=1):
+        """
+        Apply differencing to remove trend or seasonality.
+        
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Data to be processed.
+        train_or_test: string, optional
+            Indicates which step the data corresponds to.
+        lag: int, optional
+            Lag to be used for differencing.
+        Returns
+        ----------
+        : pandas.DataFrame
+        Processed data.
+        """
+        return df.diff(periods=lag).dropna()
+    
+
+
+    def log_transform(self, df, train_or_test='train'):
+        """
+        Apply log transformation to reduce variability.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Data to be processed.
+        train_or_test: string, optional
+            Indicates which step the data corresponds to.
+
+        Returns
+        ----------
+        : pandas.DataFrame
+        Processed data.
+        """
+        return df.apply(lambda x: np.log1p(x))
