@@ -695,7 +695,6 @@ def comparative_table (models, X_train, X_validation, X_test,
     return return_tables
 
 ##############################################################################
-# complete_analysis + comparative_table
 
 def compare_variables_for_regression (data, start_train, end_train, 
                           end_validation, end_test, 
@@ -736,7 +735,6 @@ def compare_variables_for_regression (data, start_train, end_train,
         End timestamp of the test data.
     tags: list of strings
         List of variable names (tags) to be used as targets (Y) in the model.
-    
     model: BibMon model
         Model to be considered in the analysis.
     metrics: list of functions, optional
