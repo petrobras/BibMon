@@ -75,6 +75,8 @@ class LLM:
 
         dict_messages = [message.to_dict() for message in [system_message] + messages]
 
+        print(dict_messages)
+        
         return self.client.chat.completions.create(
             messages=dict_messages,
             model=self._model,

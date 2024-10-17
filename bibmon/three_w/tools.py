@@ -118,10 +118,6 @@ def event_formatter(
     # Round numeric values to 4 decimal places before converting them to JSON
     rounded_df = df.round(4)
 
-    formatted_df = rounded_df.map(
-        lambda x: f"{x:.4f}" if isinstance(x, (int, float)) else x
-    )
-
     average_values = json.dumps(rounded_df.mean().apply(lambda x: f"{x:.4f}").to_dict())
     standard_deviation = json.dumps(
         rounded_df.std().apply(lambda x: f"{x:.4f}").to_dict()
