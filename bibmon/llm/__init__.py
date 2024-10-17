@@ -22,10 +22,9 @@ class LLM:
         ),
         messages: List[LlmMessage] = [],
         temperature: float = 0.1,
-        max_tokens: int = 8192,
-        top_p: float = 0.9,
+        top_p: float = 0.3,
         frequency_penalty: float = 0.0,
-        presence_penalty: float = 0.0,
+        presence_penalty: float = -1.0,
         **other_params,
     ) -> ChatCompletion:
         """
@@ -44,10 +43,6 @@ class LLM:
         temperature: float, optional
             Controls the randomness of the response. Lower values make output more deterministic, while higher values make it more creative.
             Default is 0.7.
-
-        max_tokens: int, optional
-            The maximum number of tokens to generate in the completion. A higher number allows for longer responses.
-            Default is 4096.
 
         top_p: float, optional
             Nucleus sampling. Limits the token pool to those with cumulative probability up to this value. Lower values make output more focused.
@@ -80,13 +75,10 @@ class LLM:
 
         dict_messages = [message.to_dict() for message in [system_message] + messages]
 
-
-
         return self.client.chat.completions.create(
             messages=dict_messages,
             model=self._model,
             temperature=temperature,
-            max_tokens=max_tokens,
             top_p=top_p,
             frequency_penalty=frequency_penalty,
             presence_penalty=presence_penalty,
@@ -108,7 +100,9 @@ class LLM:
             + json.dumps(tool_schema.to_dict())
         )
 
-        return self.chat_completion(system_message, messages, **other_params)
+        return self.chat_completion(
+            system_message, messages, response_format="json", **other_params
+        )
 
     def parse_chat_completion(self, completion: ChatCompletion) -> List[LlmMessage]:
         """

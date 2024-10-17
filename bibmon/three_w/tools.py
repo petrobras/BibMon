@@ -103,7 +103,9 @@ def split_dataset(
 ###############################################################################
 
 
-def event_formatter(df: pd.DataFrame, config_file: configparser.ConfigParser, n_of_rows: int = 30) -> dict:
+def event_formatter(
+    df: pd.DataFrame, config_file: configparser.ConfigParser, n_of_rows: int = 30
+) -> dict:
     df_class = df.iloc[0]["class"]
     event_name: str = None
     if df_class == 0:
@@ -113,15 +115,21 @@ def event_formatter(df: pd.DataFrame, config_file: configparser.ConfigParser, n_
     else:
         event_name = "transition"
 
-    average_values = json.dumps(df.mean().to_dict())
-    standard_deviation = json.dumps(df.std().to_dict())
+    # Round numeric values to 4 decimal places before converting them to JSON
+    rounded_df = df.round(4)
 
+    formatted_df = rounded_df.map(
+        lambda x: f"{x:.4f}" if isinstance(x, (int, float)) else x
+    )
 
-    # Converte into string, this dict contains other objects
-    head = json.dumps(df.head(n_of_rows).reset_index().map(str).to_dict())
-    tail = json.dumps(df.tail(n_of_rows).reset_index().map(str).to_dict())
+    average_values = json.dumps(rounded_df.mean().apply(lambda x: f"{x:.4f}").to_dict())
+    standard_deviation = json.dumps(
+        rounded_df.std().apply(lambda x: f"{x:.4f}").to_dict()
+    )
 
-    
+    # Convert to string with rounded values
+    head = json.dumps(rounded_df.head(n_of_rows).reset_index().map(str).to_dict())
+    tail = json.dumps(rounded_df.tail(n_of_rows).reset_index().map(str).to_dict())
 
     return {
         "event_name": event_name,
@@ -136,7 +144,10 @@ def event_formatter(df: pd.DataFrame, config_file: configparser.ConfigParser, n_
 
 
 def format_for_llm_prediction(
-    df: pd.DataFrame, config_file: configparser.ConfigParser, class_id: int, n_of_rows: int = 30
+    df: pd.DataFrame,
+    config_file: configparser.ConfigParser,
+    class_id: int,
+    n_of_rows: int = 30,
 ) -> dict:
     event_names = config_file.get("EVENTS", "NAMES")
 

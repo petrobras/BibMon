@@ -18,14 +18,14 @@ def three_w_find_linked_column(data: dict):
     )
     system_message = LlmMessage(
         "system",
-        "You are an assistant that will receive information on a dataset as JSON and the error reason and will find the column that is linked to the error. This column will be used to train a model to predict the error. You shall not use the class or state columns as those are hand labeled with the current condition, 0 = normal, 1-99 = error, 101-199 = transition.",
+        "You are an assistant that will receive information on a dataset as JSON and the error reason and will find the column that is linked to the error. You shall only respond with JSON as in the informed format. This column will be used to train a model to predict the error. You shall not use the class or state columns as those are hand labeled with the current condition, 0 = normal, 1-99 = error, 101-199 = transition.",
     )
-
 
     data_as_string = json.dumps(data)
 
     # remove \
     data_as_string = data_as_string.replace("\\", "")
+
     messages = [
         LlmMessage(
             "user",
