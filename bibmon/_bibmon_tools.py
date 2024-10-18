@@ -696,7 +696,7 @@ def comparative_table (models, X_train, X_validation, X_test,
 
 ##############################################################################
 
-def compare_variables_for_regression (data, start_train, end_train, 
+def evaluate_targets_performance (data, start_train, end_train, 
                           end_validation, end_test, 
                           tags,
                           model,
@@ -717,9 +717,13 @@ def compare_variables_for_regression (data, start_train, end_train,
                           mask = None
                                      ):
     """
-    Compare variables for regression analysis by training, validating, 
-    and testing a model on different data splits and generating relevant 
-    metrics for prediction and fault detection.
+    This function evaluates the performance of all dependent variables (targets) in a regression model.
+    It systematically tests each target and computes key performance metrics, 
+    including the R² score (a measure of how well the predictions align with actual data), 
+    mean absolute error (quantifying the average prediction error), 
+    false alarm rate (FAR) (representing the frequency of false positives), 
+    and fault detection rate (FDR) (indicating the accuracy in identifying true faults). 
+    The results for each target will be stored in a structured format for detailed analysis.
 
     Parameters
     ----------
