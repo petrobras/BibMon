@@ -69,13 +69,14 @@ class ClassificationModel:
 
         timestamps = df["timestamp"]
         X = df.drop(['class', 'state', 'timestamp'], axis=1)
-        y = df['class'].fillna(0).astype(int)
+        y = df['class'].astype(int)
 
         return X, y, timestamps
 
-    def split_files(self, files: List[str], train_size: float = 0.7) -> Tuple[List[str], List[str]]:
+    def split_files(self, files: List[str], train_size: float = 0.7, should_shuffle=True) -> Tuple[List[str], List[str]]:
         """Split the files into training and testing sets."""
-        random.shuffle(files)
+        if should_shuffle:
+            random.shuffle(files)
         split_idx = int(len(files) * train_size)
         return files[:split_idx], files[split_idx:]
 
@@ -111,38 +112,48 @@ class ClassificationModel:
         y_true_normalized = self.normalize_classes(y_true)
         y_pred_normalized = self.normalize_classes(y_pred)
 
+        # Adjusting the y positions to avoid overlap
+        offset = (max(y_true_normalized) - min(y_true_normalized)) * 0.015 
+        y_true_adjusted = [y + offset for y in y_true_normalized]
+        y_pred_adjusted = [y - offset for y in y_pred_normalized]
+
         fig = make_subplots(specs=[[{"secondary_y": True}]])
 
         fig.add_trace(
             go.Scatter(
-                x=timestamps, y=X[y_axis], mode='lines', name=y_axis, line=dict(color='blue')
+                x=timestamps, y=X[y_axis], mode='lines', name=y_axis, line=dict(color='#003366')
             ),
             secondary_y=False,
         )
 
         fig.add_trace(
             go.Scatter(
-                x=timestamps, y=y_true_normalized, mode='markers', name='Actual Class',
-                marker=dict(color='green', size=8, symbol='circle'),
-                text=[f"Class: {c}" for c in y_true]
+                x=timestamps, y=y_true_adjusted, mode='markers', name='Actual Class',
+                opacity=0.8,
+                marker=dict(size=12, symbol='circle'),
+                text=[f"Class: {c}" for c in y_true],
+                textposition="top center"
             ),
             secondary_y=True,
         )
 
         fig.add_trace(
             go.Scatter(
-                x=timestamps, y=y_pred_normalized, mode='markers', name='Predicted Class',
-                marker=dict(color='red', size=8, symbol='x'),
-                text=[f"Pred: {p}" for p in y_pred]
+                x=timestamps, y=y_pred_adjusted, mode='markers', name='Predicted Class',
+                opacity=0.8,
+                marker=dict(size=10, symbol='x'),
+                text=[f"Pred: {p}" for p in y_pred],
+                textposition="bottom center"
             ),
             secondary_y=True,
         )
 
         fig.update_layout(
-            title=f'{y_axis} with Actual vs Predicted Class (Normalized)',
+            title=f'{y_axis} with Actual vs Predicted Class',
             xaxis_title='Timestamp',
             yaxis_title=y_axis,
-            legend=dict(x=0, y=1.1, orientation='h'),
+            legend=dict(x=0.5, y=1.11, orientation='h'),
+            font=dict(size=18)
         )
 
         # Update secondary y-axis with tick values dynamically based on unique classes
@@ -151,11 +162,12 @@ class ClassificationModel:
         tick_text = [f'Class {c}' for c in unique_classes]
 
         fig.update_yaxes(
-            title_text="Class Values (Normalized)", secondary_y=True,
+            title_text="Class Values", secondary_y=True,
             tickvals=tick_vals, ticktext=tick_text
         )
 
         fig.show()
+
 
     def normalize_classes(self, classes: np.ndarray) -> List[float]:
         """
@@ -188,7 +200,7 @@ class ClassificationModel:
         return [class_mapping[c] for c in classes]
 
 
-    def complete_analysis(self, y_axis: str, files: List[str], train_size: float = 0.7) -> None:
+    def complete_analysis(self, y_axis: str, files: List[str], train_size: float = 0.7, should_shuffle=True) -> None:
         """
         Perform a complete analysis by training the model, predicting, and visualizing results.
 
@@ -200,8 +212,10 @@ class ClassificationModel:
             List of parquet files to analyze.
         train_size : float, optional
             Proportion of data to use for training (default is 0.7).
+        should_shuffle : bool, optional
+            Whether to shuffle the files before splitting (default is True).
         """
-        train_files, test_files = self.split_files(files, train_size)
+        train_files, test_files = self.split_files(files, train_size, should_shuffle=should_shuffle)
         print(f"Training on {len(train_files)} files, Testing on {len(test_files)} files.")
 
         X_train, y_train = self.load_data_from_files(train_files)
@@ -295,16 +309,13 @@ if __name__ == "__main__":
 
     model = RandomForestClassifier(n_estimators=200, max_depth=12, random_state=42, class_weight='balanced')
 
-    dataset_path = './dataset/1'
+    dataset_path = './dataset/2'
 
     # Initialize the classification model
     classification_model = ClassificationModel(dataset_path=dataset_path, model=model)
 
     # Get the list of parquet files
-    all_files = [os.path.join(dataset_path, f) for f in os.listdir(dataset_path) if f.endswith(".parquet")]
-
-    # Shuffle and limit to a subset of files for testing
-    all_files = all_files[:10]
+    all_files = [os.path.join(dataset_path, f) for f in os.listdir(dataset_path) if f.endswith(".parquet") and f.startswith("WELL-00011")]
 
     # Run the complete analysis
-    classification_model.complete_analysis(y_axis='P-MON-CKP', files=all_files)
+    classification_model.complete_analysis(y_axis='T-TPT', files=all_files, train_size=0.8, should_shuffle=False)
