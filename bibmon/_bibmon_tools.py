@@ -116,7 +116,7 @@ def spearmanr_dendrogram(df, figsize = (18,8)):
 
 ###############################################################################
 
-def train_val_test_split (data, start_train, end_train, 
+def train_val_test_split(data, start_train, end_train, 
                           end_validation, end_test, 
                           tags_X = None, tags_Y = None):
     """
