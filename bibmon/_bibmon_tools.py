@@ -696,7 +696,7 @@ def comparative_table (models, X_train, X_validation, X_test,
 
 ##############################################################################
 
-def plotFilteredData(data, color, title, notWantedTags = [], removeNaNColumns = True, removeZeroColumns = True):
+def filter_and_plot_data(data, color, title, not_wanted_tags = [], remove_NaN_columns = True, remove_zero_columns = True):
     """
     Filters and plots data from a dictionary, concatenating the values into a single DataFrame.
     Optionally removes columns that contain only NaN values or only zeros. The remaining data is
@@ -711,11 +711,11 @@ def plotFilteredData(data, color, title, notWantedTags = [], removeNaNColumns = 
         The color to be used for the plot lines.
     title: string
         The main title for the plot.
-    notWantedTags: list, optional
+    not_wanted_tags: list, optional
         A list of column names (tags) to be excluded from the plots. Default is an empty list.
-    removeNaNColumns: bool, optional
+    remove_NaN_columns: bool, optional
         If True, columns with only NaN values will be removed from the data before plotting. Default is True.
-    removeZeroColumns: bool, optional
+    remove_zero_columns: bool, optional
         If True, columns that contain only zeros will be removed from the data before plotting. Default is True.
 
     Returns
@@ -726,25 +726,25 @@ def plotFilteredData(data, color, title, notWantedTags = [], removeNaNColumns = 
         A list of column names (tags) that were plotted.
     """    
 
-    archivesKeys = data.keys()
+    archives_keys = data.keys()
     
-    filteredByData = pd.concat([data[key] for key in archivesKeys])  # Concatenate data
-    filteredByData = filteredByData.apply(pd.to_numeric, errors='coerce')
+    filtered_by_data = pd.concat([data[key] for key in archives_keys])  # Concatenate data
+    filtered_by_data = filtered_by_data.apply(pd.to_numeric, errors='coerce')
 
-    if removeNaNColumns:
-        filteredByData = filteredByData.dropna(axis=1, how='all')  # Remove all-NaN columns
+    if remove_NaN_columns:
+        filtered_by_data = filtered_by_data.dropna(axis=1, how='all')  # Remove all-NaN columns
 
-    if removeZeroColumns:
-        filteredByData = filteredByData.loc[:, (filteredByData != 0).any(axis=0)]  # Remove all-zero columns
+    if remove_zero_columns:
+        filtered_by_data = filtered_by_data.loc[:, (filtered_by_data != 0).any(axis=0)]  # Remove all-zero columns
 
-    tags = list(filteredByData.keys())
-    tags = [key for key in tags if key not in notWantedTags]  # Remove unwanted tags
+    tags = list(filtered_by_data.keys())
+    tags = [key for key in tags if key not in not_wanted_tags]  # Remove unwanted tags
 
     fig, ax = plt.subplots(len(tags), 1, figsize=(18, 10), sharex=True)
     fig.suptitle(f"{title}", fontsize=16)
     
     for i, tag in enumerate(tags):
-        tagData = filteredByData[tag].values
+        tagData = filtered_by_data[tag].values
         ax[i].plot(tagData, c=color, linewidth=0.8)
         ax[i].set_ylabel(tag, rotation=0, fontsize=14)
         ax[i].set_yticks([])
@@ -764,4 +764,4 @@ def plotFilteredData(data, color, title, notWantedTags = [], removeNaNColumns = 
                 label.set_rotation(45)
                 label.set_ha('right')
 
-    return filteredByData, tags
+    return filtered_by_data, tags
