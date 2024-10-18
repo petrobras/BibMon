@@ -188,6 +188,86 @@ def train_val_test_split (data, start_train, end_train,
             
         return (train_data, validation_data, test_data)
             
+def train_val_test_split (data, start_train, end_train, 
+                          end_validation, end_test,
+                          data_test = None, start_test = None,
+                          tags_X = None, tags_Y = None):
+    """
+    Separates the data into consecutive portions of 
+    train, validation, and test, returning 3 DataFrames.
+    It can also separate into predictor variables (X) and 
+    predicted variables (Y), which in this case will return 6 DataFrames.
+        
+    Parameters
+    ----------
+    data: pandas.DataFrame
+        Data to be separated.
+    start_train: string
+        Start timestamp of the train portion.
+    end_train: string
+        End timestamp of the train portion.
+    end_validation: string
+        End timestamp of the validation portion.
+    start_test: string
+        Start timestamp of the validation portion.
+    end_test: string
+        End timestamp of the test portion.
+    tags_X: list of strings
+        Variables to be considered in the X set.
+    tags_Y: list of strings
+        Variables to be considered in the Y set.
+    Returns
+    ----------                
+    : pandas.DataFrames
+        Separated data.
+    """               
+    train_data = data.loc[start_train:end_train]
+
+    if(data_test):
+        test_data = data_test.loc[start_test:end_test].iloc[1:,:]
+    else:
+        test_data = data.loc[end_validation:end_test].iloc[1:,:]
+
+    validation_data = data.loc[end_train:end_validation].iloc[1:,:]
+
+    if tags_Y is not None:
+
+        if not isinstance(tags_Y, list): tags_Y = [tags_Y]
+        
+        train_data_Y = train_data.loc[:,tags_Y]
+        validation_data_Y = validation_data.loc[:,tags_Y]
+        test_data_Y = test_data.loc[:,tags_Y]
+
+        if tags_X is not None:
+
+            if not isinstance(tags_X, list): tags_X = [tags_X]
+            
+            train_data_X = train_data.loc[:,tags_X]
+            validation_data_X = validation_data.loc[:,tags_X]
+            test_data_X = test_data.loc[:,tags_X]
+
+        else:
+
+            dif = train_data.columns.difference(train_data_Y.columns)
+            train_data_X = train_data[dif]
+            validation_data_X = validation_data[dif]
+            test_data_X = test_data[dif]
+            
+        return (train_data_X, validation_data_X, test_data_X, 
+                train_data_Y, validation_data_Y, test_data_Y)
+            
+    else:
+        
+        if tags_X is not None:
+
+            if not isinstance(tags_X, list): tags_Y = [tags_X]
+            
+            train_data = train_data.loc[:,tags_X]
+            validation_data = validation_data.loc[:,tags_X]
+            test_data = test_data.loc[:,tags_X]           
+            
+        return (train_data, validation_data, test_data)
+
 ###############################################################################
 
 def complete_analysis (model, X_train, X_validation, X_test, 
