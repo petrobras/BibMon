@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 import matplotlib.pyplot as plt
+import pickle
 
 ###############################################################################
 
@@ -207,7 +208,9 @@ def complete_analysis (model, X_train, X_validation, X_test,
                        count_limit = 1,
                        count_window_size = 0,
                        fault_start = None,
-                       fault_end = None):
+                       fault_end = None,
+                       save_model=False,
+                       model_filename=None):
     """
     Performs a complete monitoring analysis, with train, validation, and test.
 
@@ -262,6 +265,10 @@ def complete_analysis (model, X_train, X_validation, X_test,
         Start timestamp of the fault.
     fault_end: string, optional
         End timestamp of the fault.
+    save_model: bool, optional
+        If True, saves the trained model to a file.
+    model_filename: string, optional
+        Name of the file to save the model. If None, uses a default name.
     """               
     fig, ax = plt.subplots(3,2, figsize = (15,12))
 
@@ -341,7 +348,17 @@ def complete_analysis (model, X_train, X_validation, X_test,
             ax[2,1].axvline(datetime.strptime(str(fault_end),
                                               '%Y-%m-%d %H:%M:%S'), ls = '--')
         
-    fig.tight_layout();
+    fig.tight_layout()
+
+    ######## Saving the model ########
+    if save_model:
+        if model_filename is None:
+            model_filename = f'model_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pkl'
+        with open(model_filename, 'wb') as f:
+            pickle.dump(model, f)
+        print(f"Model saved as {model_filename}")
+
+    return model
             
 ##############################################################################
 
