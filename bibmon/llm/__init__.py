@@ -5,13 +5,40 @@ import json
 from .types import *
 
 
-class LLM:
+class Client:
+    """
+    This class provides a high-level interface for interacting with an LLM API, specifically for chat completions.
+
+    You need to provide the endpoint URL, API key, and model name to initialize the client.
+
+    Parameters
+    ----------
+    endpoint_url: str
+        The URL of the LLM API endpoint.
+
+    api_key: str, optional
+        The API key for the LLM API. Default is an empty string.
+
+    model: str
+        The name of the language model to use.
+
+    Raises
+    ----------
+    ValueError
+        If the endpoint URL or model is empty
+    """
+
     def __init__(
         self,
-        endpoint_url: str = "http://127.0.0.1:5000/v1",
-        api_key: str = "NO_API_KEY",
-        model: str = "llama3",
+        endpoint_url: str = None,
+        api_key: str = "",
+        model: str = None,
     ):
+        if endpoint_url is None:
+            raise ValueError("The endpoint URL cannot be empty.")
+        if model is None:
+            raise ValueError("The model cannot be empty.")
+
         self.client = OpenAI(base_url=endpoint_url, api_key=api_key)
         self._model = model
 
@@ -21,10 +48,10 @@ class LLM:
             "system", "You are a helpful assistant."
         ),
         messages: List[LlmMessage] = [],
-        temperature: float = 0.1,
-        top_p: float = 0.3,
+        temperature: float = 0.7,
+        top_p: float = 0.9,
         frequency_penalty: float = 0.0,
-        presence_penalty: float = -1.0,
+        presence_penalty: float = 0.0,
         **other_params,
     ) -> ChatCompletion:
         """
@@ -75,8 +102,6 @@ class LLM:
 
         dict_messages = [message.to_dict() for message in [system_message] + messages]
 
-        print(dict_messages)
-        
         return self.client.chat.completions.create(
             messages=dict_messages,
             model=self._model,
@@ -96,30 +121,30 @@ class LLM:
         messages: List[LlmMessage] = [],
         **other_params,
     ):
+        """
+        Generates a formatted json tool completion using a language model, with adjustable parameters, please check `chat_completion` for more info on the parameters.
 
-        system_message.content += (
-            "You will only respond using the following JSON schema: "
-            + json.dumps(tool_schema.to_dict())
-        )
+        Parameters
+        ----------
+        tool_schema: LlmToolSchema
+            The JSON schema for the tool completion.
+
+        system_message: str, optional
+            The initial system message to start the conversation. Default is "You are a helpful assistant."
+
+        messages: list of dict
+            A list of messages (in dictionary format) forming the conversation history. Each dictionary must have 'role' and 'content' keys.
+            Example: [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "Tell me a joke."}]
+        other_params: dict, optional
+            Additional parameters to forward to the completion call. Examples include `stop` (a list of stop sequences) or `logit_bias` (a dictionary for token biasing).
+        """
+
+        if tool_schema:
+            system_message.content += (
+                "You will only respond using the following JSON schema: "
+                + json.dumps(tool_schema.to_dict())
+            )
 
         return self.chat_completion(
             system_message, messages, response_format="json", **other_params
         )
-
-    def parse_chat_completion(self, completion: ChatCompletion) -> List[LlmMessage]:
-        """
-        Parses a chat completion response from the language model into a list of messages.
-
-        Parameters
-        ----------
-        completion: ChatCompletion
-            The chat completion response from the language model.
-
-        Returns
-        ----------
-        list of dict
-            A list of messages (in dictionary format) forming the conversation history. Each dictionary has 'role' and 'content' keys.
-            Example: [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "Tell me a joke."}]
-        """
-
-        return completion.choices[0].message.content

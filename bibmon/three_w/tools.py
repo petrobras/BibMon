@@ -145,6 +145,41 @@ def format_for_llm_prediction(
     class_id: int,
     n_of_rows: int = 30,
 ) -> dict:
+    """
+    Formats the dataset for LLM prediction.
+
+    The output is:
+    {
+        "event_name": str,
+        "event_description": str,
+        "columns_and_description": dict,
+        "data": [
+            {'event_name': str, 'average_values': str, 'standard_deviation': str, 'head': str, 'tail': str},
+            {'event_name': str, 'average_values': str, 'standard_deviation': str, 'head': str, 'tail': str},
+            ...
+        ]
+    }
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Data to be formatted.
+
+    config_file: configparser.ConfigParser
+        Configuration file.
+
+    class_id: int
+        Class ID of the dataset.
+
+    n_of_rows: int
+        Number of rows to be displayed in the head and tail.
+
+    Returns
+    ----------
+    : dict
+        Formatted data.
+    """
+
     event_names = config_file.get("EVENTS", "NAMES")
 
     event_names_list = [
@@ -158,6 +193,12 @@ def format_for_llm_prediction(
 
     # Create a dictionary with {name: description}
     properties_dict = {key: value.strip() for key, value in properties_section.items()}
+
+    # remove columns from the properties_dict that are not in the dataset
+    columns_to_remove = df.keys()
+    properties_dict = {
+        key: value for key, value in properties_dict.items() if key in columns_to_remove
+    }
 
     df_processed = preproc.PreProcess(f_pp=["ffill_nan"]).apply(df)
 

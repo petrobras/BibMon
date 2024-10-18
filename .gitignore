@@ -174,3 +174,5 @@ dmypy.json
 
 # Temporary files
 temp.py
+temp.ipynb
+/temp
