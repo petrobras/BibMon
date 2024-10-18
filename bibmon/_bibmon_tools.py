@@ -696,7 +696,7 @@ def comparative_table (models, X_train, X_validation, X_test,
 
 ##############################################################################
 
-def evaluate_targets_performance (data, start_train, end_train, 
+def targets_performance_comparative_table (data, start_train, end_train, 
                           end_validation, end_test, 
                           tags,
                           model,
@@ -782,7 +782,7 @@ def evaluate_targets_performance (data, start_train, end_train,
         passed:
 
         - **Prediction table**: A DataFrame containing prediction metrics
-          (such as error metrics) for training, validation, and test data.
+          (R² score and mean absolute error) for training, validation, and test regression.
           The table is multi-indexed, with tags (variables) and metrics as
           the indices. Each metric is calculated for each tag and data split
           (train, validation, test).
