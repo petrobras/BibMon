@@ -110,3 +110,17 @@ To apply the new logic in the library, it will be necessary to implement the use
 ### Additional Features
 
 Preferably, use the `_bibmon_tools.py` file to implement additional features.
+
+### Testing New Functionalities
+
+The first step to add new functionalities is to download the testing libraries. To do this, run the following command:
+
+```bash
+pip install -r test/requirements.txt
+```
+
+After implementing the new functionalities, run the tests to ensure that the new code is working correctly. To do this, run the following command:
+
+```bash
+pytest
+```

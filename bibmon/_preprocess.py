@@ -81,7 +81,7 @@ class PreProcess ():
 
     ###########################################################################
     
-    def apply(self, df, train_or_test = 'train'):
+    def apply(self, df, train_or_test = 'train') -> pd.DataFrame:
         """
         Sequentially applies the preprocessing functions 
         defined during initialization.
