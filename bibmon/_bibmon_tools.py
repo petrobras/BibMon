@@ -136,8 +136,6 @@ def train_val_test_split (data, start_train, end_train,
         End timestamp of the train portion.
     end_validation: string
         End timestamp of the validation portion.
-    start_test: string
-        Start timestamp of the validation portion.
     end_test: string
         End timestamp of the test portion.
     tags_X: list of strings
@@ -147,7 +145,7 @@ def train_val_test_split (data, start_train, end_train,
     data_test: pandas.DataFrame, optional
         Data to be used for test.
     start_test: string, optional
-        Start timestamp of the validation portion.
+        Start timestamp of the test portion.
     Returns
     ----------                
     : pandas.DataFrames
