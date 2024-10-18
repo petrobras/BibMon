@@ -329,7 +329,7 @@ def complete_analysis (model, X_train, X_validation, X_test,
 
     # PLOTTING SPE
 
-    model.plot_SPE(ax = ax[2,0], train_or_test = 'test', logy = logy, algorithm = algorithm)
+    model.plot_SPE(ax = ax[2,0], train_or_test = 'test', logy = logy, algorithm = algorithm, isValidation=False)
     ax[2,0].set_title('Test')
 
     if fault_start is not None:

@@ -175,7 +175,7 @@ class GenericModel (ABC):
     
     ###########################################################################
 
-    def calculate_tipping_point(self, train_or_test='train', n_sigma=6):
+    def calculate_tipping_point(self, train_or_test='train', n_sigma=6, isValidation=True):
         """
         Finds the tipping point for the alarm system using a moving average filter
 
@@ -185,6 +185,8 @@ class GenericModel (ABC):
             Context of the fit.
         n_sigma: int, optional
             Number of the moving average's standard deviations the tipping point is above the SPE mean.
+        isValidation: boolean, optional
+            If the validation period is being used.
 
         Returns
         -------
@@ -193,6 +195,9 @@ class GenericModel (ABC):
         """
 
         # Deciding on which error points to take
+        if not isValidation and train_or_test == 'test':
+            return self.limSPE_filter
+
         if train_or_test == 'train':
             SPE = self.SPE_train
         elif train_or_test == 'test':
@@ -754,7 +759,7 @@ class GenericModel (ABC):
     
 
     def plot_SPE (self, ax = None, train_or_test = 'train', logy = True,
-                  legends = True, plot_alarm_outlier = True, algorithm = "Default"):
+                  legends = True, plot_alarm_outlier = True, algorithm = "Default", isValidation=True):
         """
         Plotting the temporal evolution of SPE.
 
@@ -776,6 +781,8 @@ class GenericModel (ABC):
             Options: 'Default', 'Filter'.
             - 'Default': uses the default model to detect outliers.
             - 'Filter': uses a moving average filter to detect outliers.
+        isValidation: boolean, optional
+            If the validation period is being used.
         """
         
         if ax is not None:
@@ -792,7 +799,7 @@ class GenericModel (ABC):
             SPE = self.SPE_test
             limSPE = self.limSPE
 
-            self.limSPE_filter = self.calculate_tipping_point('test')
+            self.limSPE_filter = self.calculate_tipping_point('test', isValidation=isValidation)
         
         SPE.plot(ax=ax, logy = logy, ls='',
                 marker='.', label='SPE')
@@ -816,7 +823,7 @@ class GenericModel (ABC):
              
         elif algorithm == 'Filter':
             ax.axhline(self.limSPE_filter, color='green', ls = '--',
-                     label='Filter: %.0f%% Confidence Limit' %(self.lim_conf*100))
+                     label='Filter: %.0f' %(self.limSPE_filter))
         
         else:
             raise ValueError(f"Invalid algorithm. Options: {available_algorithms}")
