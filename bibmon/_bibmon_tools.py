@@ -725,43 +725,43 @@ def filter_and_plot_data(data, color, title, not_wanted_tags = [], remove_NaN_co
     tags: list
         A list of column names (tags) that were plotted.
     """    
+    from matplotlib.ticker import MaxNLocator
 
-    archives_keys = data.keys()
+    filtered_by_data = data.apply(pd.to_numeric, errors='coerce')
     
-    filtered_by_data = pd.concat([data[key] for key in archives_keys])  # Concatenate data
-    filtered_by_data = filtered_by_data.apply(pd.to_numeric, errors='coerce')
-
     if remove_NaN_columns:
-        filtered_by_data = filtered_by_data.dropna(axis=1, how='all')  # Remove all-NaN columns
+        filtered_by_data = filtered_by_data.dropna(axis=1, how='all')
 
     if remove_zero_columns:
-        filtered_by_data = filtered_by_data.loc[:, (filtered_by_data != 0).any(axis=0)]  # Remove all-zero columns
+        filtered_by_data = filtered_by_data.loc[:, (filtered_by_data != 0).any(axis=0)]
 
     tags = list(filtered_by_data.keys())
-    tags = [key for key in tags if key not in not_wanted_tags]  # Remove unwanted tags
+    tags = [key for key in tags if key not in not_wanted_tags]
 
     fig, ax = plt.subplots(len(tags), 1, figsize=(18, 10), sharex=True)
     fig.suptitle(f"{title}", fontsize=16)
+
+    timestamp_label = filtered_by_data.index
     
     for i, tag in enumerate(tags):
         tagData = filtered_by_data[tag].values
         ax[i].plot(tagData, c=color, linewidth=0.8)
-        ax[i].set_ylabel(tag, rotation=0, fontsize=14)
+        ax[i].set_ylabel(tag, rotation=0, fontsize=14,labelpad=100)
         ax[i].set_yticks([])
-    
-        # Clean up unnecessary borders
+        
         ax[i].spines["top"].set_visible(False)
         ax[i].spines["right"].set_visible(False)
         ax[i].spines["left"].set_visible(False)
+        
+        ax[i].yaxis.set_major_locator(MaxNLocator(nbins=3))
     
-        if i < len(tags) - 1:  # Hide X-axis for all but the last plot
+        if i < len(tags) - 1:
             ax[i].set_xticks([])
             ax[i].spines["bottom"].set_visible(False)
             ax[i].xaxis.set_ticks_position('none')
         else:
-            # Rotate X-axis labels for readability
-            for label in ax[i].get_xticklabels():
-                label.set_rotation(45)
-                label.set_ha('right')
+            ax[i].set_xlabel('Time', fontsize=14)
+            ax[i].xaxis.set_major_locator(MaxNLocator(nbins=5))
+            ax[i].set_xticklabels(timestamp_label.strftime('%Y-%m-%d %H:%M:%S'), rotation=0, ha='right')
 
     return filtered_by_data, tags
