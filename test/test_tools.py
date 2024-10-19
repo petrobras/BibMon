@@ -8,6 +8,7 @@ Created on Thu Sep  3 23:38:16 2020
 
 import bibmon
 import pandas as pd
+import pytest
 
 def test_complete_analysis():
     
@@ -60,4 +61,48 @@ def test_complete_analysis():
                             fault_start = '2018-01-02 06:00:00',
                             fault_end = '2018-01-02 09:00:00') 
     
-    model.plot_importances()                                                                             
+    model.plot_importances()
+
+def test_calculate_timestamps_with_preserve_periods():
+    df = pd.DataFrame({
+        'var1': range(100),
+        'var2': range(100, 200)
+    }, index=pd.date_range('2021-01-01', periods=50, freq='h').append(
+        pd.date_range('2021-01-03', periods=50, freq='h')))
+    
+    start_train, end_train, end_validation, end_test = bibmon.calculate_timestamps(
+        df, train_pct=0.6, validation_pct=0.2, test_pct=0.2, preserve_periods=True, time_tolerance='1h'
+    )
+    
+    assert end_train == df.index[99], "Train end does not preserve periods correctly"
+
+def test_calculate_timestamps_invalid_percentages():
+    df = pd.DataFrame({
+        'var1': range(10),
+        'var2': range(10, 20)
+    }, index=pd.date_range('2021-01-01', periods=10, freq='h'))
+
+    with pytest.raises(ValueError, match="Train, validation, and test percentages must add up to 1"):
+        bibmon.calculate_timestamps(df, train_pct=0.5, validation_pct=0.3, test_pct=0.3)
+
+def test_calculate_timestamps_non_datetime_index():
+    df = pd.DataFrame({
+        'var1': range(10),
+        'var2': range(10, 20)
+    })
+
+    with pytest.raises(ValueError, match="The dataframe index must be a DatetimeIndex"):
+        bibmon.calculate_timestamps(df, train_pct=0.6, validation_pct=0.2, test_pct=0.2)
+
+def test_calculate_timestamps_small_time_tolerance():
+    df = pd.DataFrame({
+        'var1': range(100),
+        'var2': range(100, 200)
+    }, index=pd.date_range('2021-01-01', periods=50, freq='1min').append(
+        pd.date_range('2021-01-01 01:00:00', periods=50, freq='1min')))
+    
+    start_train, end_train, end_validation, end_test = bibmon.calculate_timestamps(
+        df, train_pct=0.6, validation_pct=0.2, test_pct=0.2, preserve_periods=True, time_tolerance='1min'
+    )
+    
+    assert end_train == df.index[49], "Train end timestamp is incorrect"
