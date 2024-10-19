@@ -8,6 +8,8 @@ Created on Thu Sep  3 23:38:16 2020
 
 import bibmon
 import pandas as pd
+import os
+import pickle
 
 def test_complete_analysis():
     
@@ -48,6 +50,10 @@ def test_complete_analysis():
     from sklearn.metrics import mean_absolute_error
     
     mtr = [r2_score, mean_absolute_error]
+
+    # Filename for saving the model
+
+    model_filename = 'test_model.pkl'
                            
     # complete analysis!
                               
@@ -58,6 +64,17 @@ def test_complete_analysis():
                             metrics = mtr, 
                             count_window_size = 3, count_limit = 2,
                             fault_start = '2018-01-02 06:00:00',
-                            fault_end = '2018-01-02 09:00:00') 
+                            fault_end = '2018-01-02 09:00:00',
+                            save_model=True,
+                            model_filename=model_filename) 
     
-    model.plot_importances()                                                                             
+    model.plot_importances()
+
+    assert os.path.exists(model_filename), "Model file was not saved."
+
+    loaded_model = bibmon.load_model(model_filename)
+
+    assert isinstance(loaded_model, type(model)), "Loaded model is not the same type as the original model."
+
+    if os.path.exists(model_filename):
+        os.remove(model_filename)
