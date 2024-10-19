@@ -24,8 +24,10 @@ class NeuralModel(GenericModel):
 
     ###########################################################################
 
-    def __init__ (self, columCount, outputCount,
-                  lstmshapes=[128, 64], denseshapes=[16, 32], dropout = 0.2):
+    def __init__ (self, columCount,
+                  lstmshapes=[128, 64],
+                  denseshapes=[16, 32],
+                  dropout = 0.2):
 
         self.model = Sequential()
         
@@ -43,10 +45,10 @@ class NeuralModel(GenericModel):
         for shape in denseshapes:
             self.model.add(Dense(shape, activation='relu'))
         
-        self.model.add(Dense(outputCount, activation='softmax'))
+        self.model.add(Dense(1, activation='softmax'))
 
         optimizer = Adam(learning_rate=0.001)
-        self.model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+        self.model.compile(loss='mse', optimizer=optimizer, metrics=['accuracy'])
         
     ###########################################################################
         
