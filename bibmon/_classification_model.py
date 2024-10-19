@@ -43,7 +43,7 @@ class ClassificationModel:
         Performs the complete analysis from data loading to prediction and visualization.
     """
 
-    def __init__(self, dataset_path: str, model: Any):
+    def __init__(self, dataset_path: str, model: Any, col_to_predict='class', cols_to_drop=['state', 'timestamp']):
         """
         Initializes the ClassificationModel class with the specified model, and data directory.
 
@@ -53,10 +53,17 @@ class ClassificationModel:
             Custom model to be used for training and prediction.
         dataset_path : str, optional
             Directory where the parquet files are stored.
+        col_to_predict : str, optional
+            Name of the column to predict (default is 'class').
+        cols_to_drop : List[str], optional
+            List of columns to drop from the dataset (default is None).
+        
         """
         self.dataset_path = dataset_path
         self.model = model
         self.scaler = StandardScaler()
+        self.col_to_predict = col_to_predict
+        self.cols_to_drop = cols_to_drop
 
     def load_and_prepare_data(self, file_path: str) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
         """Load, clean, and prepare data from a parquet file."""
@@ -68,8 +75,11 @@ class ClassificationModel:
         df = df.sort_values(by="timestamp")
 
         timestamps = df["timestamp"]
-        X = df.drop(['class', 'state', 'timestamp'], axis=1)
-        y = df['class'].astype(int)
+
+        drop_cols = self.cols_to_drop + [self.col_to_predict]
+
+        X = df.drop(drop_cols, axis=1)
+        y = df[self.col_to_predict].astype(int)
 
         return X, y, timestamps
 
