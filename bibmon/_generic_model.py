@@ -823,7 +823,7 @@ class GenericModel (ABC):
              
         elif algorithm == 'Filter':
             ax.axhline(self.limSPE_filter, color='green', ls = '--',
-                     label='Filter: %.0f' %(self.limSPE_filter))
+                     label='Filter Tipping Point')
         
         else:
             raise ValueError(f"Invalid algorithm. Options: {available_algorithms}")
