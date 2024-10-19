@@ -116,6 +116,85 @@ def spearmanr_dendrogram(df, figsize = (18,8)):
 
 ###############################################################################
 
+def calculate_timestamps(data, train_pct, validation_pct, test_pct, preserve_periods=False, time_tolerance='30min'):
+    """
+    Calculates the timestamps to split the dataframe into train, validation, and test sets
+    based on the desired percentages, with the option to preserve continuous observation periods.
+
+    Parameters
+    ----------
+    data: pandas.DataFrame
+        The dataset to be split.
+    train_pct: float
+        Percentage of data for the training set (between 0 and 1).
+    validation_pct: float
+        Percentage of data for the validation set (between 0 and 1).
+    test_pct: float
+        Percentage of data for the test set (between 0 and 1).
+    preserve_periods: bool, optional
+        If True, preserve continuous observation periods when splitting the data.
+    time_tolerance: string, optional
+        Time tolerance to consider the start of new periods.
+        Example: '30min' means gaps shorter than 30 minutes will be ignored.
+
+    Returns
+    -------
+    start_train: string
+        Timestamp for the start of the training set.
+    end_train: string
+        Timestamp for the end of the training set.
+    end_validation: string
+        Timestamp for the end of the validation set.
+    end_test: string
+        Timestamp for the end of the test set.
+    """
+    
+    if round(train_pct + validation_pct + test_pct, 5) != 1:
+        raise ValueError("Train, validation, and test percentages must add up to 1.")
+    
+    if not isinstance(data.index, pd.DatetimeIndex):
+        raise ValueError("The dataframe index must be a DatetimeIndex.")
+    
+    total_rows = len(data)
+    
+    train_count = int(total_rows * train_pct)
+    validation_count = int(total_rows * validation_pct)
+    test_count = total_rows - train_count - validation_count
+
+    if preserve_periods:
+        time_diff = data.index.to_series().diff()
+        period_starts = (time_diff > pd.Timedelta(time_tolerance)).cumsum()
+
+        period_sizes = period_starts.value_counts().sort_index()
+        cumulative_counts = period_sizes.cumsum()
+
+        train_period_indices = cumulative_counts[cumulative_counts <= train_count].index
+        if not train_period_indices.empty:
+            train_period_index = train_period_indices[-1]
+        else:
+            train_period_index = cumulative_counts.index[0]
+        end_train = data[period_starts <= train_period_index].index[-1]
+
+        cumulative_train_validation_count = train_count + validation_count
+        validation_period_indices = cumulative_counts[cumulative_counts <= cumulative_train_validation_count].index
+        if not validation_period_indices.empty:
+            validation_period_index = validation_period_indices[-1]
+        else:
+            validation_period_index = cumulative_counts.index[0]
+        end_validation = data[period_starts <= validation_period_index].index[-1]
+
+        end_test = data.index[-1]
+        start_train = data.index[0]
+    else:
+        start_train = data.index[0]
+        end_train = data.index[train_count - 1]
+        end_validation = data.index[train_count + validation_count - 1]
+        end_test = data.index[-1]
+
+    return start_train, end_train, end_validation, end_test
+
+###############################################################################
+
 def train_val_test_split (data, start_train, end_train, 
                           end_validation, end_test, 
                           tags_X = None, tags_Y = None):
