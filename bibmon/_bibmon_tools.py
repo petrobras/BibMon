@@ -210,7 +210,9 @@ def complete_analysis (model, X_train, X_validation, X_test,
                        fault_end = None,
                        transient_start = None,
                        transient_end = None,
-                       algorithm = 'Default'):
+                       algorithm = 'Default',
+                       use_val_limit=True
+                       ):
     """
     Performs a complete monitoring analysis, with train, validation, and test.
 
@@ -274,6 +276,8 @@ def complete_analysis (model, X_train, X_validation, X_test,
         Options: 'Default', 'Filter'.
         - 'Default': uses the default model to detect outliers.
         - 'Filter': uses a moving average filter to detect outliers.
+    use_val_limit: boolean, optional
+        If the validation limit should be used in the test phase.
     """               
     fig, ax = plt.subplots(3,2, figsize = (15,12))
 
@@ -325,11 +329,15 @@ def complete_analysis (model, X_train, X_validation, X_test,
     model.predict(X_test, Y_test, 
                   count_window_size = count_window_size, 
                   count_limit = count_limit,
-                  redefine_limit = False, algorithm=algorithm)
+                  redefine_limit = False, algorithm=algorithm, use_val_limit=use_val_limit)
 
     # PLOTTING SPE
 
-    model.plot_SPE(ax = ax[2,0], train_or_test = 'test', logy = logy, algorithm = algorithm, isValidation=False)
+    model.plot_SPE(ax = ax[2,0],
+                   train_or_test = 'test',
+                   logy = logy, algorithm = algorithm,
+                   is_validation=False,
+                   use_val_limit=use_val_limit)
     ax[2,0].set_title('Test')
 
     if fault_start is not None:

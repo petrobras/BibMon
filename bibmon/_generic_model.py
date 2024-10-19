@@ -175,7 +175,7 @@ class GenericModel (ABC):
     
     ###########################################################################
 
-    def calculate_tipping_point(self, train_or_test='train', n_sigma=6, isValidation=True):
+    def calculate_tipping_point(self, train_or_test='train', n_sigma=6, is_validation=True, use_val_limit=True):
         """
         Finds the tipping point for the alarm system using a moving average filter
 
@@ -185,8 +185,10 @@ class GenericModel (ABC):
             Context of the fit.
         n_sigma: int, optional
             Number of the moving average's standard deviations the tipping point is above the SPE mean.
-        isValidation: boolean, optional
+        is_validation: boolean, optional
             If the validation period is being used.
+        use_val_limit: boolean, optional
+            If the validation limit should be used for the test period.
 
         Returns
         -------
@@ -195,7 +197,7 @@ class GenericModel (ABC):
         """
 
         # Deciding on which error points to take
-        if not isValidation and train_or_test == 'test':
+        if not is_validation and train_or_test == 'test' and use_val_limit:
             return self.limSPE_filter
 
         if train_or_test == 'train':
@@ -636,7 +638,7 @@ class GenericModel (ABC):
                         
     ###########################################################################
 
-    def test (self, redefine_limit = False, delete_testing_data = False, algorithm = "Default"):
+    def test (self, redefine_limit = False, delete_testing_data = False, algorithm = "Default", use_val_limit=True):
         """
         Analyzes a window of data, applying a model test.
         Must be called after the pre_test function.
@@ -686,7 +688,7 @@ class GenericModel (ABC):
         
         # redefining the limit, for the validation case
         
-        if redefine_limit:
+        if redefine_limit or not use_val_limit:
             iSPE = np.sort(self.SPE_test)
             if algorithm == "Default":
                 self.limSPE = iSPE[int(self.lim_conf*self.X_test.shape[0])]
@@ -758,7 +760,8 @@ class GenericModel (ABC):
     ###########################################################################
 
     def plot_SPE (self, ax = None, train_or_test = 'train', logy = True,
-                  legends = True, plot_alarm_outlier = True, algorithm = "Default", isValidation=True):
+                 legends = True, plot_alarm_outlier = True, algorithm = "Default",
+                 is_validation=True, use_val_limit=True):
         """
         Plotting the temporal evolution of SPE.
 
@@ -780,8 +783,10 @@ class GenericModel (ABC):
             Options: 'Default', 'Filter'.
             - 'Default': uses the default model to detect outliers.
             - 'Filter': uses a moving average filter to detect outliers.
-        isValidation: boolean, optional
+        is_validation: boolean, optional
             If the validation period is being used.
+        use_val_limit: boolean, optional
+            If the validation limit should be used for the test period.
         """
         
         if ax is not None:
@@ -798,7 +803,8 @@ class GenericModel (ABC):
             SPE = self.SPE_test
             limSPE = self.limSPE
 
-            self.limSPE_filter = self.calculate_tipping_point('test', isValidation=isValidation)
+            self.limSPE_filter = self.calculate_tipping_point('test', is_validation=is_validation,
+                                                               use_val_limit=use_val_limit)
         
         SPE.plot(ax=ax, logy = logy, ls='',
                 marker='.', label='SPE')
@@ -1054,7 +1060,9 @@ class GenericModel (ABC):
                  a_pp = 'fit', 
                  delete_testing_data = False,
                  redefine_limit = False,
-                 algorithm = "Default"):
+                 algorithm = "Default",
+                 use_val_limit=True
+                 ):
         '''   
         Performs the complete pipeline of model prediction (testing), 
         sequentially executing the 'pre_test' and 'test' methods.
@@ -1089,6 +1097,8 @@ class GenericModel (ABC):
             Options: 'Default', 'Filter'.
             - 'Default': uses the default model to detect outliers.
             - 'Filter': uses a moving average filter to detect outliers.
+        use_val_limit: boolean, optional
+            If the validation limit should be used for the test period.
         '''
         
         if f_pp == 'fit':
@@ -1107,5 +1117,5 @@ class GenericModel (ABC):
                       f_pp = f_pp, a_pp = a_pp)
         self.test(redefine_limit = redefine_limit,
                   delete_testing_data = delete_testing_data,
-                  algorithm = algorithm)
+                  algorithm = algorithm, use_val_limit=use_val_limit)
         
