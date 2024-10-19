@@ -756,19 +756,6 @@ class GenericModel (ABC):
 
 
     ###########################################################################
-    def calculate_accuracy (self, start, end):
-        """
-        Calculates the accuracy of the model by comparing alarms and the correct error range.
-        the correct error range is inside validation start and validation end
-
-        Returns
-        -------
-        accuracy: float
-            Accuracy of the model.
-        """
-        accuracy = np.sum((self.alarmOutlier[start:end] == 1) & (self.SPE_test[start:end] > self.limSPE)) / np.sum(self.alarmOutlier[start:end] == 1)
-        return accuracy
-    
 
     def plot_SPE (self, ax = None, train_or_test = 'train', logy = True,
                   legends = True, plot_alarm_outlier = True, algorithm = "Default", isValidation=True):
