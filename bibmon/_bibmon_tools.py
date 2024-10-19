@@ -362,6 +362,31 @@ def complete_analysis (model, X_train, X_validation, X_test,
             
 ##############################################################################
 
+def load_model(model_filename):
+    """
+    Loads a trained model from a .pkl file and returns the model.
+
+    Parameters
+    ----------
+    model_filename: string
+        The name of the .pkl file that contains the saved model.
+
+    Returns
+    -------
+    model: The trained model that was saved.
+    """
+    try:
+        with open(model_filename, 'rb') as f:
+            model = pickle.load(f)
+        print(f"Model loaded from {model_filename}")
+        return model
+    except FileNotFoundError:
+        print(f"Error: The file {model_filename} was not found.")
+    except Exception as e:
+        print(f"An error occurred while loading the model: {e}")
+
+##############################################################################
+
 def comparative_table (models, X_train, X_validation, X_test, 
                        Y_train = None , Y_validation = None, Y_test = None,
                        lim_conf = 0.99,
