@@ -30,14 +30,14 @@ class sklearnManifold(GenericModel):
     ###########################################################################
 
     def __init__(self, manifold_model):
-        self.has_Y = False  # Manifold models generally don't use a target variable
+        self.has_Y = False  # Default set to False, because Manifold algorithms don't require a target variable
         self.manifold_model = manifold_model
 
         self.name = self.manifold_model.__class__.__name__
 
     ###########################################################################
 
-    def train_core(self,X_train):
+    def train_core(self):
         """
         Fits the manifold model using the training data.
         """
@@ -45,14 +45,29 @@ class sklearnManifold(GenericModel):
         self.transformed_data=self.manifold_model.fit_transform(self.X_train.values)
         
         ###########################################################################
+        
+    def fit_transform(self,X):
+        """
+        Fits the clustering method and returns the transformed data
+        
+        """
+        
+        self.X_train=X #Attributing training data to variable X passed in the m
+        self.train_core() #Training the method with train_core
+        
+        """ 
+        Returning the transformed data for visualization
+        """
+        return self.transformed_data
 
-    def map_from_X(self, X):
+
+    def transform(self,X_test):
         """
         Applies the transformation to a new dataset. Note that some manifold
         models, like TSNE, may not have a direct `transform` method.
         """
         if hasattr(self.manifold_model, 'transform'):
-            return self.manifold_model.transform(X)
+            return self.manifold_model.transform(X_test)
         else:
             raise NotImplementedError("This manifold model does not support transformation on new data.")
 

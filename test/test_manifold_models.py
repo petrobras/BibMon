@@ -35,7 +35,7 @@ for attr in bibmon.__all__:
             #else:                    
                 #m = a()        
             
-                model.train_core()
+                model.train_core(X)
                 
                 
 
