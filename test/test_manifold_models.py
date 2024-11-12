@@ -35,7 +35,9 @@ for attr in bibmon.__all__:
             #else:                    
                 #m = a()        
             
-                model.train_core(X)
+                embedded_data=model.fit_transform(X)
+                embedded_data.plot_embedding()
+                
                 
                 
 
