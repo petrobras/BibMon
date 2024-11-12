@@ -37,14 +37,14 @@ class sklearnManifold(GenericModel):
 
     ###########################################################################
 
-    def train_core(self):
+    def train_core(self,X_train):
         """
         Fits the manifold model using the training data.
         """
         # Manifold models often apply dimensionality reduction directly to the input data
-        self.transformed_data = self.manifold_model.fit_transform(self.X_train.values)
-
-    ###########################################################################
+        self.transformed_data=self.manifold_model.fit_transform(self.X_train.values)
+        
+        ###########################################################################
 
     def map_from_X(self, X):
         """

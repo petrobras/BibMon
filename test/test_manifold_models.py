@@ -9,6 +9,8 @@ import bibmon
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 
+
+
 SC=StandardScaler()
 
 # loading the data from TEP
@@ -29,14 +31,13 @@ for attr in bibmon.__all__:
         if a.__base__ == bibmon._generic_model.GenericModel:   
             if a == bibmon.sklearnManifold:                 
                 from sklearn.manifold import TSNE
-                m = a(TSNE(n_components=2))
-            else:                    
-                m = a()        
-                          
-            # TRAINING
+                model = a(TSNE(n_components=2))
+            #else:                    
+                #m = a()        
+            
+                model.train_core()
                 
-            X_embedded=m.fit_transform(X)
-            X_embedded.plot_embedding()
+                
 
             
             
