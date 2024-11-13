@@ -7,6 +7,7 @@ Created on Tue  8 08:14:01 2024
 
 
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from ._generic_model import GenericModel
 
@@ -41,8 +42,13 @@ class sklearnManifold(GenericModel):
         """
         Fits the manifold model using the training data.
         """
-        # Manifold models often apply dimensionality reduction directly to the input data
-        self.transformed_data=self.manifold_model.fit_transform(self.X_train.values)
+        ## Check if the input is a pandas DataFrame
+        if isinstance(self.X_train, pd.DataFrame):
+            # If it's a DataFrame, use the `.values` attribute to extract numpy array
+            self.transformed_data = self.manifold_model.fit_transform(self.X_train.values)
+        else:
+            # If it's already a numpy array, use it directly
+            self.transformed_data = self.manifold_model.fit_transform(self.X_train)
         
         ###########################################################################
         
