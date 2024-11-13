@@ -123,5 +123,34 @@ class sklearnManifold(GenericModel):
             ax.set_zlabel("Component 3")
         else:
             print("Embedding dimensionality is not 2D or 3D; custom plotting is required.")
+            
+    def clusters_visualization(self, X):
+        """
+        Fits the manifold model, transforms the data, and plots the resulting 2D or 3D embedding.
+    
+        Parameters
+        ----------
+        X: array-like or DataFrame
+            The data to fit and transform.
+        """
+        # Perform fit_transform and store the transformed data
+        transformed_data = self.fit_transform(X)
+        
+        # Plot the 2D or 3D embedding based on the transformed data
+        if transformed_data.shape[1] == 2:
+            plt.scatter(transformed_data[:, 0], transformed_data[:, 1], s=50, cmap='viridis')
+            plt.title(f"{self.name} 2D Embedding")
+            plt.xlabel("Component 1")
+            plt.ylabel("Component 2")
+        elif transformed_data.shape[1] == 3:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            ax.scatter(transformed_data[:, 0], transformed_data[:, 1], transformed_data[:, 2], s=50, cmap='viridis')
+            ax.set_title(f"{self.name} 3D Embedding")
+            ax.set_xlabel("Component 1")
+            ax.set_ylabel("Component 2")
+            ax.set_zlabel("Component 3")
+        else:
+            print("Embedding dimensionality is not 2D or 3D; custom plotting is required.")
         
         plt.show()

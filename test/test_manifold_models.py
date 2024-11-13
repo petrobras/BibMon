@@ -33,9 +33,12 @@ for attr in bibmon.__all__:
                 from sklearn.manifold import TSNE
                 model = a(TSNE(n_components=2))
                 
-                
                 embedded_data=model.fit_transform(X)
-                embedded_data.plot_embedding()
+                model.plot_embedding()
+                
+                model.clusters_visualization(X)
+                
+                
                 
                 
                 
