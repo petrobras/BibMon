@@ -61,7 +61,7 @@ class sklearnManifold(GenericModel):
         return self.transformed_data
 
 
-    def transform(self,X_test):
+    def map_from_X(self,X_test):
         """
         Applies the transformation to a new dataset. Note that some manifold
         models, like TSNE, may not have a direct `transform` method.
@@ -81,6 +81,22 @@ class sklearnManifold(GenericModel):
             setattr(self.manifold_model, key, value)
 
     ###########################################################################
+    
+    def transform(self, X_test):
+        """
+        Transforms the input data using the trained manifold model by calling map_from_X.
+
+        Parameters
+        ----------
+        X_test: array-like or DataFrame
+            The new data to transform.
+        
+        Returns
+        -------
+        transformed_data: array-like
+            The transformed data.
+        """
+        return self.map_from_X(X_test)
 
     def plot_embedding(self):
         """
