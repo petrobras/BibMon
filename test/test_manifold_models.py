@@ -32,9 +32,8 @@ for attr in bibmon.__all__:
             if a == bibmon.sklearnManifold:                 
                 from sklearn.manifold import TSNE
                 model = a(TSNE(n_components=2))
-            #else:                    
-                #m = a()        
-            
+                
+                
                 embedded_data=model.fit_transform(X)
                 embedded_data.plot_embedding()
                 
