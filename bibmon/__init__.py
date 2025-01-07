@@ -10,6 +10,7 @@ from ._bibmon_tools import train_val_test_split, complete_analysis, comparative_
 __all__ = ['Autoencoder','PCA','ESN','SBM',
 	       'sklearnRegressor', 'PreProcess',
            'load_tennessee_eastman', 'load_real_data', 
-           'train_val_test_split', 'complete_analysis', 'comparative_table','targets_comparative_table'
+           'train_val_test_split', 'complete_analysis', 'comparative_table',
+           'targets_comparative_table',
 	       'spearmanr_dendrogram', 'create_df_with_dates',
            'create_df_with_noise', 'align_dfs_by_rows']
