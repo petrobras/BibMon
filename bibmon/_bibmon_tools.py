@@ -696,37 +696,37 @@ def comparative_table (models, X_train, X_validation, X_test,
 
 ##############################################################################
 
-def targets_performance_comparative_table (data, start_train, end_train, 
-                          end_validation, end_test, 
-                          tags,
-                          model,
-                          metrics, count_window_size, count_limit,
-                          fault_start,
-                          fault_end,
-                          tags_X = None,
-                          f_pp_train = ['remove_empty_variables',
-                                     'ffill_nan',
-                                     'remove_frozen_variables',
-                                     'normalize',
-                                     'moving_average_filter'],
-                          a_pp_train = None,
-                          f_pp_test = ['replace_nan_with_values',
-                                    'normalize',
-                                      'moving_average_filter'],
-                          a_pp_test = None,
-                          mask = None
-                                     ):
+def targets_comparative_table (model, data, 
+                               start_train, end_train, 
+                               end_validation, end_test, 
+                               tags,
+                               metrics, 
+                               fault_start=None,
+                               fault_end=None,
+                               count_window_size=0, count_limit=1,
+                               lim_conf=0.99,
+                               tags_X = None,
+                               f_pp_train = ['remove_empty_variables',
+                                            'ffill_nan',
+                                            'remove_frozen_variables',
+                                            'normalize'],
+                               a_pp_train = None,
+                               f_pp_test = ['replace_nan_with_values',
+                                            'normalize'],
+                                a_pp_test = None,
+                                mask = None):
     """
     This function evaluates the performance of all dependent variables (targets) in a regression model.
     It systematically tests each target and computes key performance metrics, 
-    including the R² score (a measure of how well the predictions align with actual data), 
-    mean absolute error (quantifying the average prediction error), 
-    false alarm rate (FAR) (representing the frequency of false positives), 
+    including fitting metrics such as the R² score (a measure of how well the predictions align with actual data) and 
+    mean absolute error (quantifying the average prediction error), and also 
+    alarm metrics such as false alarm rate (FAR) (representing the frequency of false positives), 
     and fault detection rate (FDR) (indicating the accuracy in identifying true faults). 
-    The results for each target will be stored in a structured format for detailed analysis.
 
     Parameters
     ----------
+    model: BibMon model
+        Model to be considered in the analysis.
     data: pandas.DataFrame
         DataFrame containing the time series data for the variables of interest.
     start_train: string
@@ -739,20 +739,20 @@ def targets_performance_comparative_table (data, start_train, end_train,
         End timestamp of the test data.
     tags: list of strings
         List of variable names (tags) to be used as targets (Y) in the model.
-    model: BibMon model
-        Model to be considered in the analysis.
-    metrics: list of functions, optional
+    metrics: list of functions
         Functions for calculating metrics to be displayed in the title of 
         the graph.
+    fault_start: string, optional
+        Start timestamp of the fault.
+    fault_end: string, optional
+        End timestamp of the fault.
     count_window_size: int, optional
         Window sizes used in count alarm calculation.
     count_limit: int, optional
         Limit of points to be considered in the window 
         for the count alarm to sound.
-    fault_start: string, optional
-        Start timestamp of the fault.
-    fault_end: string, optional
-        End timestamp of the fault.
+    lim_conf: float, optional
+        Confidence limit for the detection index.
     tags_X: list of strings
         Variables to be considered in the X set.
     f_pp_train: list, optional
@@ -782,7 +782,7 @@ def targets_performance_comparative_table (data, start_train, end_train,
         passed:
 
         - **Prediction table**: A DataFrame containing prediction metrics
-          (R² score and mean absolute error) for training, validation, and test regression.
+          (such as R² score and mean absolute error) for training, validation, and test regression.
           The table is multi-indexed, with tags (variables) and metrics as
           the indices. Each metric is calculated for each tag and data split
           (train, validation, test).
@@ -793,9 +793,6 @@ def targets_performance_comparative_table (data, start_train, end_train,
           `fault_start` is provided, and it includes performance information
           related to the model’s ability to detect faults during the specified
           period. It is also multi-indexed, with tags and alarms as the indices.
-
-        The function returns these tables to provide a detailed analysis of
-        model performance and fault detection.
     """
 
     return_tables = []
@@ -823,7 +820,6 @@ def targets_performance_comparative_table (data, start_train, end_train,
                                                                  tags_Y = tag_Y) 
 
             ######## TRAINING ########
-            lim_conf = 0.99
     
             model.fit(X_train, Y_train, 
                       f_pp = f_pp_train,
