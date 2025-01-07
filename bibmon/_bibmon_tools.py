@@ -115,10 +115,11 @@ def spearmanr_dendrogram(df, figsize = (18,8)):
     plt.show()
 
 ###############################################################################
-
+            
 def train_val_test_split (data, start_train, end_train, 
-                          end_validation, end_test, 
-                          tags_X = None, tags_Y = None):
+                          end_validation, end_test,
+                          tags_X = None, tags_Y = None,
+                          data_test = None, start_test = None):
     """
     Separates the data into consecutive portions of 
     train, validation, and test, returning 3 DataFrames.
@@ -141,14 +142,28 @@ def train_val_test_split (data, start_train, end_train,
         Variables to be considered in the X set.
     tags_Y: list of strings
         Variables to be considered in the Y set.
+    data_test: pandas.DataFrame, optional
+        Data to be used for test.
+    start_test: string, optional
+        Start timestamp of the test portion.
     Returns
     ----------                
     : pandas.DataFrames
         Separated data.
-    """               
+    """
+
     train_data = data.loc[start_train:end_train]
     validation_data = data.loc[end_train:end_validation].iloc[1:,:]
-    test_data = data.loc[end_validation:end_test].iloc[1:,:]
+
+    if data_test is not None and start_test is None:
+        raise ValueError("If 'data_test' is provided, 'start_test' must also be provided.")
+    if start_test is not None and data_test is None:
+        raise ValueError("If 'start_test' is provided, 'data_test' must also be provided.")
+    
+    if data_test is not None:
+        test_data = data_test.loc[start_test:end_test].iloc[1:, :]
+    else:
+        test_data = data.loc[end_validation:end_test].iloc[1:, :]
 
     if tags_Y is not None:
 
@@ -187,7 +202,7 @@ def train_val_test_split (data, start_train, end_train,
             test_data = test_data.loc[:,tags_X]           
             
         return (train_data, validation_data, test_data)
-            
+
 ###############################################################################
 
 def complete_analysis (model, X_train, X_validation, X_test, 
