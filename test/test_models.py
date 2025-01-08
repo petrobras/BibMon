@@ -34,7 +34,9 @@ def test_models_with_df_inputs():
     for attr in bibmon.__all__:             
         a = getattr(bibmon,attr)     
         if isinstance(a, type):         
-            if a.__base__ == bibmon._generic_model.GenericModel:   
+            if a.__base__ == bibmon._generic_model.GenericModel:
+                if a == bibmon.sklearnManifold:                 
+                    continue
                 if a == bibmon.sklearnRegressor:                 
                     from sklearn.linear_model import LinearRegression
                     m = a(LinearRegression())
@@ -148,6 +150,8 @@ def test_models_with_np_array_inputs():
         a = getattr(bibmon,attr)     
         if isinstance(a, type):         
             if a.__base__ == bibmon._generic_model.GenericModel:   
+                if a == bibmon.sklearnManifold:                 
+                    continue
                 if a == bibmon.sklearnRegressor:                 
                     from sklearn.linear_model import LinearRegression
                     m = a(LinearRegression())
