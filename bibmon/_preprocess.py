@@ -1,7 +1,7 @@
 import copy
 import pandas as pd
 import statsmodels.tsa.tsatools
-from ._outlier_handling import detect_outliers_iqr, remove_outliers
+import scipy.stats.mstats 
 
 ###############################################################################
 
@@ -11,7 +11,7 @@ class PreProcess ():
     
     Parameters
     ----------
-        
+            
         f_pp: list, optional
             List containing strings with names of methods to be used 
             in the preprocessing of the train data. The list of methods 
@@ -43,23 +43,22 @@ class PreProcess ():
         add_moving_average()
         
     * Noise treatment:
-        moving_average_filter()      
-    
+        moving_average_filter()   
+
     * Outlier handling:
-        detect_outliers_iqr();
-        remove_outliers()
+        process_outliers_iqr()
     
     """
-        
+            
     ###########################################################################
     
     def __init__(self, f_pp = None, a_pp = None, is_Y = False):
-
+ 
         self.is_Y = is_Y
-        self.f_pp = f_pp         
-        self._a_pp = a_pp      
+        self.f_pp = f_pp        
+        self._a_pp = a_pp     
         if self.f_pp is not None:
-            self.params_per_func = {f: {} for f in f_pp}         
+            self.params_per_func = {f: {} for f in f_pp}        
 
     ###########################################################################
 
@@ -79,7 +78,7 @@ class PreProcess ():
             self.params_per_func = {f: {} for f in self.f_pp}
             
             if a_pp is not None:
-                                  
+                                
                 for pname, pval in a_pp.items():
                     func, param = pname.split('__',1)
                     self.params_per_func[func][param] = pval
@@ -98,10 +97,10 @@ class PreProcess ():
         train_or_test: string, optional
             Indicates which step the data corresponds to.
         Returns
-        ----------                 
+        ----------                
         : pandas.DataFrame
-            Processed data.
-        """        
+           Processed data.
+        """         
         
         df_processed = df
         
@@ -110,7 +109,7 @@ class PreProcess ():
             df_processed = getattr(self, f)(df_processed,
                                             train_or_test, 
                                             **self.params_per_func[f])
-            
+                
         return df_processed
     
     ######################### 
@@ -130,10 +129,10 @@ class PreProcess ():
         train_or_test: string, optional
             Indicates which step the data corresponds to.
         Returns
-        ----------                 
+        ----------                
         : pandas.DataFrame
-            Processed data.
-        """        
+           Processed data.
+        """           
         if train_or_test == 'train':
             return df.dropna(axis=1, how='all')
         elif train_or_test == 'test':
@@ -142,7 +141,7 @@ class PreProcess ():
     ###########################################################################
 
     def remove_frozen_variables (self, df, train_or_test = 'train',
-                                    threshold = 1e-6): 
+                                 threshold = 1e-6): 
         """
         Removes variables whose variation falls below a given limit.
     
@@ -155,10 +154,10 @@ class PreProcess ():
         threshold: float, optional
             Variance limit to consider a variable as frozen.
         Returns
-        ----------                 
+        ----------                
         : pandas.DataFrame
-            Processed data.
-        """                                                                  
+           Processed data.
+        """                                              
         if not self.is_Y:
             if train_or_test == 'train':
                 return df.loc[:, df.var(ddof=1) > threshold]
@@ -185,9 +184,9 @@ class PreProcess ():
         train_or_test: string, optional
             Indicates which step the data corresponds to.
         Returns
-        ----------                 
+        ----------                
         : pandas.DataFrame
-            Processed data.
+           Processed data.
         """    
         return df.ffill().bfill()
 
@@ -204,9 +203,9 @@ class PreProcess ():
         train_or_test: string, optional
             Indicates which step the data corresponds to.
         Returns
-        ----------                 
+        ----------                
         : pandas.DataFrame
-            Processed data.
+           Processed data.
         """    
         return df.dropna(axis=0, how='any')
     
@@ -225,10 +224,11 @@ class PreProcess ():
         val: int or float
             Value to be used in the replacement.
         Returns
-        ----------                 
+        ----------                
         : pandas.DataFrame
-            Processed data.
-        """                                          
+        Processed data.
+        """    
+                                    
         return df.fillna(val)
 
     ###############
@@ -247,9 +247,9 @@ class PreProcess ():
         df: pandas.DataFrame
             Data to be processed.
         Returns
-        ----------                 
+        ----------                
         : pandas.DataFrame
-            Processed data.
+        Processed data.
         """    
         return df*self.SD + self.Mu
     
@@ -268,9 +268,9 @@ class PreProcess ():
         mode: string, optional
             Type of normalization (standard, robust, m-robust or s-robust).
         Returns
-        ----------                 
+        ----------                
         : pandas.DataFrame
-            Processed data.
+        Processed data.
         """    
         if train_or_test == 'train':
             
@@ -279,13 +279,13 @@ class PreProcess ():
                 self.SD = df.std(ddof=1)
             elif mode == 'robust':
                 self.Mu = df.median()
-                self.SD = df.mad()                   
+                self.SD = df.mad()
             elif mode == 'm-robust':
                 self.Mu = df.median()
                 self.SD = df.std(ddof=1)
             elif mode == 's-robust':
                 self.Mu = df.mean()
-                self.SD = df.mad()                   
+                self.SD = df.mad()
             
             return (df - self.Mu)/self.SD
         
@@ -294,3 +294,172 @@ class PreProcess ():
             return (df - self.Mu)/self.SD
 
     ##############################
+    # ADDING DYNAMICS
+    ##############################
+        
+    ###########################################################################
+
+    def apply_lag (self, df, train_or_test = 'train', lag = 1):
+        """
+        Generation of time-delayed variables.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Data to be processed.
+        train_or_test: string, optional
+            Indicates which step the data corresponds to.
+        lag: int, optional
+            Number of delays to be considered.
+        Returns
+        ----------                
+        : pandas.DataFrame
+        Processed data.
+        """    
+                        
+        if self.is_Y:
+            return df.iloc[lag:,:]
+        else:    
+            array_lagged = statsmodels.tsa.tsatools.lagmat(df, maxlag = lag, 
+                                                           trim = "forward", 
+                                                       original = 'in')[lag:,:]   
+            new_columns = []
+            for l in range(lag):
+                new_columns.append(df.columns+' - lag '+str(l+1))
+            columns_lagged = df.columns.append(new_columns)
+            index_lagged = df.index[lag:]
+            df_lagged = pd.DataFrame(array_lagged, index = index_lagged,
+                                     columns = columns_lagged)
+            
+            return df_lagged  
+        
+    ###########################################################################
+
+    def add_moving_average (self, df, train_or_test = 'train', WS = 10):
+        """
+        Adding variables filtered by moving average.
+        Attention! Do not confuse with moving_average_filter, in which
+        the original variables are not kept in the dataset.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Data to be processed.
+        train_or_test: string, optional
+            Indicates which step the data corresponds to.
+        WS: int, optional
+            Window size of the filter.
+        Returns
+        ----------                
+        : pandas.DataFrame
+        Processed data.
+        """    
+        if self.is_Y:
+            return df
+                
+        new_df = copy.deepcopy(df)
+                
+        for column in df:
+            new_df[column+' MA'] = new_df[column].rolling(WS).mean()
+        
+        return new_df.drop(df.index[:WS])
+
+    ##############################
+    # NOISE TREATMENT
+    ##############################
+
+    ###########################################################################
+
+    def moving_average_filter (self, df,  train_or_test = 'train', WS = 10):
+        """
+        Moving average noise filter.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Data to be processed.
+        train_or_test: string, optional
+            Indicates which step the data corresponds to.
+        WS: int, optional
+            Window size of the filter.
+        Returns
+        ----------                
+        : pandas.DataFrame
+        Processed data.
+        """    
+        new_df = copy.deepcopy(df)
+                
+        for column in df:
+            new_df[column] = new_df[column].rolling(WS).mean()
+            
+        if hasattr(df,'name'):
+            new_df.name = df.name
+                        
+        return new_df.drop(df.index[:WS])
+    
+    ####################
+    # OUTLIER HANDLING
+    ####################
+
+    ###########################################################################
+
+    def process_outliers_iqr(self, df: pd.DataFrame,
+                            train_or_test: bool = 'train',
+                            cols: list = None, 
+                            method: str = 'remove') -> pd.DataFrame:
+        """
+        Removes or handles univariate outliers in a DataFrame using 
+        the IQR (Interquartile Range) method.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Data to be processed.
+        train_or_test: string, optional
+            Indicates which step the data corresponds to.
+        cols: list, optional
+            List of columns for which outliers will be removed or handled.
+            Default: None (which results in considering all cols)
+        method: str
+            Method for handling outliers. Can be 'remove' (removes outliers),
+            'median' (replaces outliers with the median), 
+            or 'winsorize' (applies winsorization).
+           Default: 'remove'.
+        Returns
+        ----------                
+        : pandas.DataFrame: 
+            DataFrame with outliers removed or handled.
+        """
+
+        if 'train_or_test' == 'test':
+            # it doesn't make sense to process outliers in the test data
+            # returning unchanged df:
+            return df
+
+        df_outliers = df.copy()
+
+        if cols is None:
+            cols = list(df.columns)
+
+        for col in cols:
+            Q1 = df_outliers[col].quantile(0.25)
+            Q3 = df_outliers[col].quantile(0.75)
+            IQR = Q3 - Q1
+            lower_bound = Q1 - 1.5 * IQR
+            upper_bound = Q3 + 1.5 * IQR
+
+            if method == 'remove':
+                df_outliers = df_outliers[(df_outliers[col] >= lower_bound) &
+                                           (df_outliers[col] <= upper_bound)]
+            elif method == 'median':
+                median = df_outliers[col].median()
+                df_outliers.loc[(df_outliers[col] < lower_bound) | 
+                                (df_outliers[col] > upper_bound), col] = median
+            elif method == 'winsorize':
+                df_outliers[col]=scipy.stats.mstats.winsorize(df_outliers[col], 
+                                                           limits=[0.05, 0.05])
+            else:
+                raise ValueError("Invalid method. Choose between 'remove', \
+                                 'median', or 'winsorize'.")
+
+        return df_outliers
