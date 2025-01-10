@@ -1,6 +1,7 @@
 import copy
 import pandas as pd
 import statsmodels.tsa.tsatools
+import scipy.stats.mstats 
 
 ###############################################################################
 
@@ -42,7 +43,10 @@ class PreProcess ():
         add_moving_average()
         
     * Noise treatment:
-        moving_average_filter()       
+        moving_average_filter()   
+
+    * Outlier handling:
+        process_outliers_iqr()
     
     """
             
@@ -275,13 +279,13 @@ class PreProcess ():
                 self.SD = df.std(ddof=1)
             elif mode == 'robust':
                 self.Mu = df.median()
-                self.SD = df.mad()               
+                self.SD = df.mad()
             elif mode == 'm-robust':
                 self.Mu = df.median()
                 self.SD = df.std(ddof=1)
             elif mode == 's-robust':
                 self.Mu = df.mean()
-                self.SD = df.mad()               
+                self.SD = df.mad()
             
             return (df - self.Mu)/self.SD
         
@@ -392,3 +396,70 @@ class PreProcess ():
             new_df.name = df.name
                         
         return new_df.drop(df.index[:WS])
+    
+    ####################
+    # OUTLIER HANDLING
+    ####################
+
+    ###########################################################################
+
+    def process_outliers_iqr(self, df: pd.DataFrame,
+                            train_or_test: bool = 'train',
+                            cols: list = None, 
+                            method: str = 'remove') -> pd.DataFrame:
+        """
+        Removes or handles univariate outliers in a DataFrame using 
+        the IQR (Interquartile Range) method.
+
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            Data to be processed.
+        train_or_test: string, optional
+            Indicates which step the data corresponds to.
+        cols: list, optional
+            List of columns for which outliers will be removed or handled.
+            Default: None (which results in considering all cols)
+        method: str
+            Method for handling outliers. Can be 'remove' (removes outliers),
+            'median' (replaces outliers with the median), 
+            or 'winsorize' (applies winsorization).
+           Default: 'remove'.
+        Returns
+        ----------                
+        : pandas.DataFrame: 
+            DataFrame with outliers removed or handled.
+        """
+
+        if 'train_or_test' == 'test':
+            # it doesn't make sense to process outliers in the test data
+            # returning unchanged df:
+            return df
+
+        df_outliers = df.copy()
+
+        if cols is None:
+            cols = list(df.columns)
+
+        for col in cols:
+            Q1 = df_outliers[col].quantile(0.25)
+            Q3 = df_outliers[col].quantile(0.75)
+            IQR = Q3 - Q1
+            lower_bound = Q1 - 1.5 * IQR
+            upper_bound = Q3 + 1.5 * IQR
+
+            if method == 'remove':
+                df_outliers = df_outliers[(df_outliers[col] >= lower_bound) &
+                                           (df_outliers[col] <= upper_bound)]
+            elif method == 'median':
+                median = df_outliers[col].median()
+                df_outliers.loc[(df_outliers[col] < lower_bound) | 
+                                (df_outliers[col] > upper_bound), col] = median
+            elif method == 'winsorize':
+                df_outliers[col]=scipy.stats.mstats.winsorize(df_outliers[col], 
+                                                           limits=[0.05, 0.05])
+            else:
+                raise ValueError("Invalid method. Choose between 'remove', \
+                                 'median', or 'winsorize'.")
+
+        return df_outliers
