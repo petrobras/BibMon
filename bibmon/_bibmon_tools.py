@@ -66,6 +66,43 @@ def create_df_with_noise (array,
     return df
     
 ###############################################################################
+def detect_outliers_iqr(df: pd.DataFrame, 
+                        cols: list = None) -> pd.DataFrame:
+    """
+    Detects outliers in a DataFrame using the IQR (Interquartile Range) 
+    method.
+
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Data to be processed.
+    cols: list
+        List of columns for which outliers will be detected.
+        Default: None (which results in considering all cols)
+    Returns
+    ----------                
+    : pandas.DataFrame: 
+        DataFrame with outliers flagged as 1 
+        and other points as 0.
+    """
+
+    df_outliers = df.copy()
+
+    if cols is None:
+        cols = list(df.columns)
+
+    for col in cols:
+        Q1 = df_outliers[col].quantile(0.25)
+        Q3 = df_outliers[col].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        df_outliers[col] = ((df_outliers[col] < lower_bound) | 
+                            (df_outliers[col] > upper_bound)).astype(int)
+    return df_outliers
+
+###############################################################################
+
 
 def align_dfs_by_rows (df1, df2):
     """
