@@ -29,7 +29,7 @@ setuptools.setup(
     name='bibmon',
     description='Library with routines for data-driven process monitoring.',
     license='Apache 2.0',
-    version='1.1.6',
+    version='1.2.0',
     long_description=README,
     long_description_content_type='text/markdown',
     url='https://github.com/petrobras/bibmon',
@@ -38,6 +38,6 @@ setuptools.setup(
     package_data={
         'bibmon': ['real_process_data/*.csv','tennessee_eastman/*.dat'],
     },
-    python_requires=">=3.12",
+    python_requires=">=3.10",
     install_requires=install_requires
 )
