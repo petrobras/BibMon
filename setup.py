@@ -38,6 +38,6 @@ setuptools.setup(
     package_data={
         'bibmon': ['real_process_data/*.csv','tennessee_eastman/*.dat'],
     },
-    python_requires=">=3.10",
-    install_requires=install_requires
+    python_requires=">=3.8",
+    install_requires=install_requires,
 )

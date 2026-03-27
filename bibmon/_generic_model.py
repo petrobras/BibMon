@@ -13,6 +13,7 @@ from abc import ABC, abstractmethod
 from ._alarms import detecOutlier
 from ._preprocess import PreProcess
 from ._bibmon_tools import align_dfs_by_rows
+from ._nnv import compute_nnv_contributions, run_nnv_analysis
 
 ###############################################################################
 
@@ -218,26 +219,39 @@ class GenericModel (ABC):
 
     ###########################################################################
 
-    def compute_SPE_contributions (self, pred, X):
+    def compute_SPE_contributions (self, pred, X, method='classic',
+                                    reference_values=None):
         """
-        Calculation of SPE contributions for diagnosis based on partial
-        decomposition analysis. Valid for reconstruction models,
-        in which self.has_Y = False.
+        Calculation of SPE contributions for fault diagnosis.
+        Valid for reconstruction models, in which self.has_Y = False.
 
-        Parâmetros:
+        Parameters
         ----------
         pred, X: numpy.array
-            Data windows to compute contributions. 
-            
-        Retornos:
-        ----------                
+            Data windows to compute contributions.
+        method: str, optional
+            Contribution method: ``'classic'`` (partial decomposition)
+            or ``'nnv'`` (Nearest Normal Value).
+        reference_values: numpy.array or None, optional
+            Reference values for the NNV method.  When *None* and
+            *method='nnv'*, zeros are used (appropriate for
+            normalised data).  Ignored when *method='classic'*.
+
+        Returns
+        ----------
         SPE_contributions: numpy.array
            Contributions to the SPE.
-        """       
-        
+        """
         X = np.array(X)
+
+        if method == 'nnv':
+            return compute_nnv_contributions(
+                self.map_from_X, X,
+                reference_values=reference_values
+            )
+
+        # classic method
         X_pred = np.array(pred)
-                
         return np.absolute(X*(X-X_pred))
 
     ###########################################################################
@@ -329,7 +343,9 @@ class GenericModel (ABC):
           
     ###########################################################################
 
-    def train (self, lim_conf = 0.99, delete_training_data = False):
+    def train (self, lim_conf = 0.99, delete_training_data = False,
+               contribution_method = 'classic',
+               nnv_reference_values = None):
         """
         Performs the model training. 
         Must be called after the pre_train function.
@@ -341,7 +357,14 @@ class GenericModel (ABC):
         delete_training_data: boolean, optional
             If True, the data is deleted at the end of training.
             Useful to save memory.
-        """        
+        contribution_method: str, optional
+            Method for computing SPE contributions:
+            ``'classic'`` or ``'nnv'``.
+        nnv_reference_values: numpy.array or None, optional
+            Reference values for the NNV method.
+        """
+        self.contribution_method = contribution_method
+        self.nnv_reference_values = nnv_reference_values        
         
         self.lim_conf = lim_conf
 
@@ -389,7 +412,9 @@ class GenericModel (ABC):
         if not self.has_Y:
             self.SPE_contrib_train = self.compute_SPE_contributions(
                                         self.X_train_pred.values,
-                                        self.X_train.values)            
+                                        self.X_train.values,
+                                        method=self.contribution_method,
+                                        reference_values=self.nnv_reference_values)            
         
         # denormalizing
         
@@ -682,7 +707,9 @@ class GenericModel (ABC):
                                     axis=1)   
             self.SPE_contrib_test = self.compute_SPE_contributions(
                                              self.X_test_pred.values, 
-                                             self.X_test.values)
+                                             self.X_test.values,
+                                             method=getattr(self, 'contribution_method', 'classic'),
+                                             reference_values=getattr(self, 'nnv_reference_values', None))
 
         # redefining the limit, for the validation case
         
@@ -862,6 +889,51 @@ class GenericModel (ABC):
 
     ###########################################################################
 
+    def plot_NNV_contributions(self, ax=None):
+        """
+        Plotting the temporal evolution of NNV contributions on a heatmap.
+
+        Must be called after ``nnv_analysis``.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes._subplots.AxesSubplot, optional
+            Axis where the graph will be plotted.
+        """
+        if not hasattr(self, 'NNV_contrib'):
+            print('No NNV contributions found. Run nnv_analysis() first.')
+            return
+
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(20, 8))
+
+        SPE_contrib = self.NNV_contrib
+
+        sns.heatmap(SPE_contrib, ax=ax,
+                    yticklabels=max(1, int(SPE_contrib.shape[0] / 10)),
+                    cmap="Blues")
+
+        yticks = ax.get_yticks()
+        if hasattr(SPE_contrib, 'index') \
+                and hasattr(SPE_contrib.index, 'to_list'):
+            datetime_labels = [SPE_contrib.index[int(tick)] for
+                               tick in yticks if 0 <= int(tick) <
+                               len(SPE_contrib.index)]
+        else:
+            datetime_labels = yticks
+
+        ax.set_yticks(yticks)
+        try:
+            ax.set_yticklabels([d.strftime('%Y-%m-%d %H:%M:%S')
+                                for d in datetime_labels], rotation=0)
+        except AttributeError:
+            ax.set_yticklabels(datetime_labels, rotation=0)
+
+        ax.set_title('NNV Contributions')
+        ax.figure.autofmt_xdate()
+
+    ###########################################################################
+
     def plot_predictions (self, ax = None, train_or_test = 'train', 
                           X_pred_to_plot = None, metrics = None):
         """
@@ -958,7 +1030,9 @@ class GenericModel (ABC):
              params = None,
              params_types = None,
              params_possibilities = None,
-             n_trials = 20):
+             n_trials = 20,
+             contribution_method = 'classic',
+             nnv_reference_values = None):
         """
         Performs the complete pipeline of model training,
         sequentially executing the 'pre_train' and 'train' methods.
@@ -1012,6 +1086,11 @@ class GenericModel (ABC):
             the parameter, as specified in the Optuna library API.
         n_trials: int, optional
             Number of iterations in the hyperparameter search optimization.
+        contribution_method: str, optional
+            Method for computing SPE contributions:
+            ``'classic'`` or ``'nnv'``.
+        nnv_reference_values: numpy.array or None, optional
+            Reference values for the NNV method.
         """
 
         X_train = pd.DataFrame(X_train)
@@ -1061,7 +1140,9 @@ class GenericModel (ABC):
                         a_pp_test  = a_pp_test)
 
         self.train(lim_conf = lim_conf, 
-                   delete_training_data = delete_training_data)
+                   delete_training_data = delete_training_data,
+                   contribution_method = contribution_method,
+                   nnv_reference_values = nnv_reference_values)
 
         if redefine_limit:
             self.pre_test(X_val, Y_val)
@@ -1131,4 +1212,70 @@ class GenericModel (ABC):
                       f_pp = f_pp, a_pp = a_pp)
         self.test(redefine_limit = redefine_limit,
                   delete_testing_data = delete_testing_data)
+
+    ###########################################################################
+
+    def nnv_analysis (self, dataset, reference_values=None,
+                      adwin_delta=0.01, adwin_clock=1, ema_alpha=0.05,
+                      f_pp=None):
+        """
+        Execute a complete NNV analysis with adaptive reference updating.
+
+        Uses ADWIN drift detection to
+        adaptively update reference values during normal operation and
+        reset them when concept drift is detected.
+
+        Parameters
+        ----------
+        dataset : pandas.DataFrame
+            Complete dataset for monitoring.  Each row is an observation.
+        reference_values : pandas.Series or None, optional
+            Initial reference values for each variable.  When *None*,
+            zeros are used (appropriate for normalised data).
+        adwin_delta : float, optional
+            Sensitivity parameter for the ADWIN drift detector.
+        adwin_clock : int, optional
+            How often ADWIN checks for drift. 1 means every sample
+            (recommended for real-time monitoring), 32 is the default.
+        ema_alpha : float, optional
+            Smoothing factor for the EMA used to track the normal
+            operating reference. Effective memory ≈ 1/ema_alpha samples.
+            Typical range: 0.01 – 0.05 (default 0.05).
+        f_pp : list or None, optional
+            Preprocessing functions passed to ``predict``.
+            If *None*, the functions stored during ``fit`` are used.
+
+        Returns
+        -------
+        contrib_NNV : pandas.DataFrame
+            Normalised NNV contributions (n_samples × n_variables).
+        spe_series : pandas.Series
+            SPE value for each sample.
+        final_reference : numpy.ndarray
+            Reference values at the end of the analysis.
+        reference_history : pandas.DataFrame
+            Reference values at each time step.
+        drift_indices : list of int
+            Positional indices where ADWIN detected drift.
+        """
+        if f_pp is None:
+            f_pp = getattr(self, 'f_pp_test', None)
+
+        contrib_NNV, spe_series, final_ref, ref_history, drift_idx = run_nnv_analysis(
+            self, dataset,
+            reference_values=reference_values,
+            adwin_delta=adwin_delta,
+            adwin_clock=adwin_clock,
+            ema_alpha=ema_alpha,
+            f_pp=f_pp
+        )
+
+        # Persist all NNV analysis state
+        self.NNV_contrib = contrib_NNV
+        self.NNV_spe = spe_series
+        self.NNV_reference = final_ref
+        self.NNV_reference_history = ref_history
+        self.NNV_drift_indices = drift_idx
+
+        return contrib_NNV, spe_series, final_ref, ref_history, drift_idx
         
