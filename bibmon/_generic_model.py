@@ -6,6 +6,7 @@ import pandas as pd
 import seaborn as sns
 import sklearn.model_selection
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 from abc import ABC, abstractmethod
 
@@ -53,6 +54,11 @@ class GenericModel (ABC):
             Square Prediction Error. One-dimensional vectors containing
             the SPE values calculated at each time step in 
             training and testing.  
+
+        SPE_contrib_train, SPE_contrib_test: pd.DataFrame
+            Contributions to SPE. Bidimensional matrices containing
+            the SPE contributions of each variable at each time step in
+            training and testing. Valid for reconstruction models.
                 
         * Training parameters:
         ----------
@@ -117,11 +123,13 @@ class GenericModel (ABC):
         map_from_X (@abstractmethod)
         set_hyperparameters
         load_model
+        compute_SPE_contributions
         pre_train
         train
         pre_test
         test
         plot_SPE
+        plot_SPE_contributions
         fit
         predict       
     """
@@ -207,6 +215,30 @@ class GenericModel (ABC):
         self.limSPE = limSPE
         self.SPE_mean = SPE_mean
         self.count_window_size = count_window_size
+
+    ###########################################################################
+
+    def compute_SPE_contributions (self, pred, X):
+        """
+        Calculation of SPE contributions for diagnosis based on partial
+        decomposition analysis. Valid for reconstruction models,
+        in which self.has_Y = False.
+
+        Parâmetros:
+        ----------
+        pred, X: numpy.array
+            Data windows to compute contributions. 
+            
+        Retornos:
+        ----------                
+        SPE_contributions: numpy.array
+           Contributions to the SPE.
+        """       
+        
+        X = np.array(X)
+        X_pred = np.array(pred)
+                
+        return np.absolute(X*(X-X_pred))
 
     ###########################################################################
 
@@ -352,6 +384,12 @@ class GenericModel (ABC):
         self.limSPE = iSPE[int(lim_conf*self.X_train.shape[0])]
         
         self.limSPE_train = copy.deepcopy(self.limSPE)
+
+        # calculating contributions
+        if not self.has_Y:
+            self.SPE_contrib_train = self.compute_SPE_contributions(
+                                        self.X_train_pred.values,
+                                        self.X_train.values)            
         
         # denormalizing
         
@@ -372,7 +410,12 @@ class GenericModel (ABC):
         self.index_train = self.X_train.index
         
         self.SPE_train = pd.Series(self.SPE_train, index = self.index_train)
-        
+
+        if not self.has_Y:
+            self.SPE_contrib_train = pd.DataFrame(self.SPE_contrib_train,
+                                        index = self.index_train,
+                                        columns = self.tags_X)
+
         # deleting training data, if applicable
         if delete_training_data:
             del self.X_train, self.X_train_orig, \
@@ -381,7 +424,8 @@ class GenericModel (ABC):
                 del self.Y_train, self.Y_train_orig, \
                     self.Y_train_pred, self.Y_train_pred_orig
             else:
-                del self.X_train_pred, self.X_train_pred_orig    
+                del self.X_train_pred, self.X_train_pred_orig, \
+                    self.SPE_contrib_train    
     
     ###########################################################################
     
@@ -619,7 +663,7 @@ class GenericModel (ABC):
         
         self.test_time = end_test - start_test
 
-        # storing results and calculating SPE
+        # storing results and calculating SPE and SPE_contrib
     
         if self.has_Y:
             self.Y_test_pred = pd.DataFrame(test_pred,
@@ -636,7 +680,10 @@ class GenericModel (ABC):
             self.SPE_test = np.sum((self.X_test.values-
                                     self.X_test_pred.values)**2,
                                     axis=1)   
-        
+            self.SPE_contrib_test = self.compute_SPE_contributions(
+                                             self.X_test_pred.values, 
+                                             self.X_test.values)
+
         # redefining the limit, for the validation case
         
         if redefine_limit:
@@ -681,6 +728,11 @@ class GenericModel (ABC):
         self.SPE_test = pd.Series(self.SPE_test, 
                                 index = self.X_test.index)
 
+        if not self.has_Y:
+            self.SPE_contrib_test = pd.DataFrame(self.SPE_contrib_test,
+                                        index = self.X_test.index,
+                                        columns = self.tags_test_X)
+
         self.alarms = {}
 
         self.alarmOutlier = pd.Series(self.alarmOutlier,
@@ -696,12 +748,14 @@ class GenericModel (ABC):
         # deleting testing data, if applicable
         if delete_testing_data:
             del self.X_test, self.X_test_orig, \
-                self.SPE_test, self.alarms, self.alarmOutlier
+                self.SPE_test, \
+                self.alarms, self.alarmOutlier
             if self.has_Y:
                 del self.Y_test, self.Y_test_orig, \
                     self.Y_test_pred, self.Y_test_pred_orig
             else:
-                del self.X_test_pred, self.X_test_pred_orig
+                del self.X_test_pred, self.X_test_pred_orig, \
+                    self.SPE_contrib_test,
             if hasattr(self, 'alarmCount'): del self.alarmCount
 
     ###########################################################################
@@ -757,7 +811,55 @@ class GenericModel (ABC):
         
         if legends:
             ax.legend(fontsize=12);
-                        
+
+    ###########################################################################
+
+    def plot_SPE_contributions(self, ax = None, train_or_test = 'test'):
+        """
+        Plotting the temporal evolution of SPE contributions on a heatmap.
+
+        Parameters:
+        ----------
+        ax: matplotlib.axes._subplots.AxesSubplot
+            Axis where the graph will be plotted.
+        train_or_test: string
+            Indicates whether to plot the 'train' or 'test' graph.
+        """
+
+        if self.has_Y:
+            print('This is not a reconstruction model!')
+            return
+
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(20, 8))
+        
+        if train_or_test == 'train':
+            SPE_contrib = self.SPE_contrib_train
+        elif train_or_test == 'test':
+            SPE_contrib = self.SPE_contrib_test
+        
+        # Plot heatmap
+        sns.heatmap(SPE_contrib, ax=ax, 
+                    yticklabels=int(SPE_contrib.shape[0] / 10),
+                    cmap="Blues")
+        
+        yticks = ax.get_yticks()
+        if hasattr(SPE_contrib, 'index') \
+            and hasattr(SPE_contrib.index, 'to_list'):
+            # Convert tick positions to datetime using the DataFrame's index
+            datetime_labels = [SPE_contrib.index[int(tick)] for 
+                               tick in yticks if 0 <= int(tick) < 
+                               len(SPE_contrib.index)]
+        else:
+            # Fallback: Use integer positions as labels
+            datetime_labels = yticks
+
+        ax.set_yticks(yticks)
+        ax.set_yticklabels([d.strftime('%Y-%m-%d %H:%M:%S') 
+                            for d in datetime_labels], rotation=0)
+
+        ax.figure.autofmt_xdate()
+
     ###########################################################################
 
     def plot_predictions (self, ax = None, train_or_test = 'train', 
