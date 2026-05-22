@@ -25,8 +25,9 @@ class Autoencoder (GenericModel):
 
         self.has_Y = False       
 
-        self.regressor = MLPRegressor(hidden_layer_sizes,activation, 
-                                      solver=solver, alpha=alpha,
+        self.regressor = MLPRegressor(hidden_layer_sizes=hidden_layer_sizes,
+                          activation=activation,
+                          solver=solver, alpha=alpha,
                                       batch_size=batch_size, 
                                       learning_rate=learning_rate,
                                       learning_rate_init=learning_rate_init, 

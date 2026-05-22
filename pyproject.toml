@@ -1,0 +1,50 @@
+[project]
+name = "bibmon"
+version = "1.2.1"
+description = "Library with routines for data-driven process monitoring."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [
+    { name = "BibMon developers", email = "cc-bibmon@petrobras.com.br" },
+]
+
+dependencies = [
+    "numpy>=2.1.0",
+    "scipy>=1.14.1",
+    "scikit-learn>=1.5.1",
+    "pandas>=2.2.2",
+    "matplotlib>=3.9.0",
+    "seaborn>=0.13.2",
+    "statsmodels>=0.14.1",
+    "optuna>=3.6.1",
+    "ipykernel>=7.2.0",
+    "ipywidgets>=8.1.8",
+]
+
+[project.urls]
+Homepage = "https://github.com/petrobras/bibmon"
+Repository = "https://github.com/petrobras/bibmon"
+
+[project.optional-dependencies]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinx-autodocgen",
+    "sphinxcontrib-napoleon",
+    "myst-nb",
+]
+test = [
+    "pytest>=9.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["bibmon"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"bibmon/real_process_data" = "bibmon/real_process_data"
+"bibmon/tennessee_eastman" = "bibmon/tennessee_eastman"
