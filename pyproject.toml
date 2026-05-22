@@ -34,6 +34,9 @@ docs = [
     "sphinxcontrib-napoleon",
     "myst-nb",
 ]
+test = [
+    "pytest>=9.0.0",
+]
 
 [build-system]
 requires = ["hatchling"]
