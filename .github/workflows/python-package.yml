@@ -28,7 +28,7 @@ jobs:
       uses: astral-sh/setup-uv@v5
     - name: Install dependencies
       run: |
-        uv pip install --system -e . flake8 pytest
+        uv pip install --system -e ".[test]" flake8
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
